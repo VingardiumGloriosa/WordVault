@@ -40,7 +40,7 @@ function RootNavigator() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ title: "Welcome" }}
+          options={{ title: "Dic" }}
         />
       )}
     </Stack.Navigator>
