@@ -4,8 +4,10 @@ import { StyleSheet, View, Alert } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { Session } from "@supabase/supabase-js";
 import Avatar from "./Avatar";
+import { useAuth } from "../auth/AuthProvider";
 
 export default function Account({ session }: { session: Session }) {
+  const { signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -108,7 +110,7 @@ export default function Account({ session }: { session: Session }) {
         <Button
           type="clear"
           title="Sign out 👋"
-          onPress={() => supabase.auth.signOut()}
+          onPress={() => signOut()}
         />
       </View>
     </View>

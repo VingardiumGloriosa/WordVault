@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { saveWord } from "../lib/savedWords";
 
-const API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en";
+const API_URL = process.env.EXPO_PUBLIC_DICTIONARY_API_URL;
 
 export type DictionaryEntry = {
   word: string;
@@ -16,18 +16,15 @@ export type DictionaryEntry = {
 };
 
 type DictionaryState = {
-  query: string;
   result: DictionaryEntry[] | null;
   loading: boolean;
   error: string | null;
 
   search: (word: string) => Promise<void>;
-  clear: () => void;
   saveCurrentWord: (entry: DictionaryEntry, userId: string) => Promise<void>;
 };
 
 export const useDictionaryStore = create<DictionaryState>((set) => ({
-  query: "",
   result: null,
   loading: false,
   error: null,
@@ -35,7 +32,7 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
   search: async (word) => {
     if (!word.trim()) return;
 
-    set({ loading: true, error: null, query: word });
+    set({ loading: true, error: null });
 
     try {
       const res = await fetch(`${API_URL}/${word.toLowerCase()}`);
@@ -55,14 +52,6 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
       });
     }
   },
-
-  clear: () =>
-    set({
-      query: "",
-      result: null,
-      error: null,
-      loading: false,
-    }),
 
   saveCurrentWord: async (entry, userId) => {
     const meaning = entry.meanings[0];

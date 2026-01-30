@@ -17,7 +17,6 @@ function RootNavigator() {
 
   return (
     <Stack.Navigator>
-      {}
       {!isSignedIn && !isSignedOut && (
         <Stack.Screen
           name="Splash"
@@ -26,7 +25,6 @@ function RootNavigator() {
         />
       )}
 
-      {}
       {isSignedOut && (
         <Stack.Screen
           name="SignIn"
@@ -35,7 +33,6 @@ function RootNavigator() {
         />
       )}
 
-      {}
       {isSignedIn && (
         <Stack.Screen
           name="App"

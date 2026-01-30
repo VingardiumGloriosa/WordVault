@@ -1,8 +1,9 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
+import { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
 type AuthContextType = {
-  session: any;
+  session: Session | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -20,7 +21,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -29,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+    }).catch(() => {
+      setSession(null);
     });
     return () => {
       authListener.subscription.unsubscribe();
