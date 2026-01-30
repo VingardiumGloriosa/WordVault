@@ -5,7 +5,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 
 import SplashScreen from "./screens/SplashScreen";
 import SignInScreen from "./screens/SignInScreen";
-import HomeScreen from "./screens/HomeScreen";
+import AppTabs from "./navigation/AppTabs";
 
 import { useIsSignedIn, useIsSignedOut } from "./auth/AuthHooks";
 
@@ -17,7 +17,7 @@ function RootNavigator() {
 
   return (
     <Stack.Navigator>
-      {/* while loading session, we could show Splash */}
+      {}
       {!isSignedIn && !isSignedOut && (
         <Stack.Screen
           name="Splash"
@@ -26,7 +26,7 @@ function RootNavigator() {
         />
       )}
 
-      {/* Signed Out */}
+      {}
       {isSignedOut && (
         <Stack.Screen
           name="SignIn"
@@ -35,12 +35,12 @@ function RootNavigator() {
         />
       )}
 
-      {/* Signed In */}
+      {}
       {isSignedIn && (
         <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ title: "Dic" }}
+          name="App"
+          component={AppTabs}
+          options={{ headerShown: false }}
         />
       )}
     </Stack.Navigator>
