@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { View, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Input, Button, Text } from "@rneui/themed";
 import { useAuth } from "../auth/AuthProvider";
+import { colors, ornament } from "../theme";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,13 +47,20 @@ export default function SignInScreen() {
 
   if (confirmationSent) {
     return (
-      <View style={styles.container}>
-        <Text h3 style={styles.title}>Check Your Email</Text>
-        <Text style={styles.subtitle}>
-          We sent a confirmation link to {email.trim()}. Verify your email to get in.
+      <LinearGradient
+        colors={[colors.void, colors.abyss, colors.burgundy + "30", colors.void]}
+        locations={[0, 0.3, 0.7, 1]}
+        style={styles.container}
+      >
+        <Text style={styles.ornament}>{ornament}</Text>
+        <Text h3 h3Style={styles.confirmTitle}>Check Your Email</Text>
+        <Text style={styles.confirmBody}>
+          A confirmation link has been sent to{"\n"}
+          <Text style={styles.emailHighlight}>{email.trim()}</Text>
         </Text>
+        <Text style={styles.ornament}>{ornament}</Text>
         <Button
-          title="Back to Sign In"
+          title="Return to Sign In"
           type="outline"
           onPress={() => {
             setConfirmationSent(false);
@@ -62,156 +71,213 @@ export default function SignInScreen() {
           buttonStyle={styles.outlineButton}
           titleStyle={styles.outlineButtonText}
         />
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <LinearGradient
+      colors={[colors.void, colors.abyss, colors.burgundy + "25", colors.void]}
+      locations={[0, 0.4, 0.7, 1]}
+      style={styles.flex}
     >
-      <Text h1 style={styles.brand}>WordVault</Text>
-      <Text style={styles.tagline}>your dark little dictionary</Text>
-      <Text style={styles.subtitle}>
-        {isSignUp ? "Create your account" : "Sign in to your account"}
-      </Text>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View style={styles.brandBlock}>
+          <Text style={styles.ornament}>{ornament}</Text>
+          <Text h1 h1Style={styles.brand}>WordVault</Text>
+          <Text style={styles.tagline}>a compendium of language</Text>
+          <Text style={styles.ornament}>{ornament}</Text>
+        </View>
 
-      <Input
-        placeholder="Email"
-        placeholderTextColor="#555"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        errorMessage={email.length > 0 && !emailValid ? "Invalid email format" : undefined}
-        leftIcon={{ name: "email", type: "material", color: "#a855f7", size: 20 }}
-        containerStyle={styles.inputContainer}
-        inputStyle={styles.inputText}
-        inputContainerStyle={styles.inputInner}
-        labelStyle={styles.label}
-        errorStyle={styles.errorText}
-      />
+        <Text style={styles.modeLabel}>
+          {isSignUp ? "Create Account" : "Sign In"}
+        </Text>
 
-      <Input
-        placeholder="Password"
-        placeholderTextColor="#555"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        errorMessage={password.length > 0 && password.length < 6 ? "At least 6 characters" : undefined}
-        leftIcon={{ name: "lock", type: "material", color: "#a855f7", size: 20 }}
-        containerStyle={styles.inputContainer}
-        inputStyle={styles.inputText}
-        inputContainerStyle={styles.inputInner}
-        labelStyle={styles.label}
-        errorStyle={styles.errorText}
-      />
+        <View style={styles.formCard}>
+          <Input
+            placeholder="email"
+            placeholderTextColor={colors.ghost}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            errorMessage={email.length > 0 && !emailValid ? "invalid email format" : undefined}
+            leftIcon={{ name: "email", type: "material", color: colors.amberMuted, size: 18 }}
+            containerStyle={styles.inputContainer}
+            inputStyle={styles.inputText}
+            inputContainerStyle={styles.inputInner}
+            errorStyle={styles.errorText}
+          />
 
-      <Button
-        title={loading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Sign Up" : "Sign In")}
-        onPress={handleSubmit}
-        disabled={loading || !isValid}
-        containerStyle={styles.buttonContainer}
-        buttonStyle={styles.primaryButton}
-        disabledStyle={styles.disabledButton}
-        titleStyle={styles.primaryButtonText}
-      />
+          <Input
+            placeholder="password"
+            placeholderTextColor={colors.ghost}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            errorMessage={password.length > 0 && password.length < 6 ? "at least 6 characters" : undefined}
+            leftIcon={{ name: "lock", type: "material", color: colors.amberMuted, size: 18 }}
+            containerStyle={styles.inputContainer}
+            inputStyle={styles.inputText}
+            inputContainerStyle={styles.inputInner}
+            errorStyle={styles.errorText}
+          />
 
-      <Button
-        title={isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
-        type="clear"
-        onPress={() => {
-          setIsSignUp(!isSignUp);
-          setPassword("");
-        }}
-        containerStyle={styles.toggleContainer}
-        titleStyle={styles.toggleText}
-      />
-    </KeyboardAvoidingView>
+          <Button
+            title={loading
+              ? (isSignUp ? "Creating..." : "Signing in...")
+              : (isSignUp ? "Create Account" : "Enter")}
+            onPress={handleSubmit}
+            disabled={loading || !isValid}
+            containerStyle={styles.buttonContainer}
+            buttonStyle={styles.primaryButton}
+            disabledStyle={styles.disabledButton}
+            titleStyle={styles.primaryButtonText}
+            disabledTitleStyle={styles.disabledButtonText}
+          />
+        </View>
+
+        <Button
+          title={isSignUp
+            ? "Already have an account? Sign in"
+            : "Need an account? Create one"}
+          type="clear"
+          onPress={() => {
+            setIsSignUp(!isSignUp);
+            setPassword("");
+          }}
+          containerStyle={styles.toggleContainer}
+          titleStyle={styles.toggleText}
+        />
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 24,
-    backgroundColor: "#0a0a0a",
+    padding: 28,
+  },
+  brandBlock: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  ornament: {
+    color: colors.faded,
+    fontSize: 14,
+    letterSpacing: 6,
+    textAlign: "center",
+    marginVertical: 8,
   },
   brand: {
-    textAlign: "center",
-    color: "#a855f7",
-    marginBottom: 2,
-    letterSpacing: 2,
+    color: colors.bone,
+    letterSpacing: 6,
+    textTransform: "uppercase",
+    fontWeight: "300",
+    fontSize: 30,
   },
   tagline: {
-    textAlign: "center",
-    color: "#555",
-    fontSize: 13,
+    color: colors.ash,
+    fontSize: 12,
     fontStyle: "italic",
-    marginBottom: 24,
-    letterSpacing: 1,
+    marginTop: 4,
+    letterSpacing: 2,
   },
-  title: {
+  modeLabel: {
+    color: colors.parchment,
     textAlign: "center",
-    color: "#d4d4d4",
-    marginBottom: 8,
+    fontSize: 13,
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    marginBottom: 20,
   },
-  subtitle: {
-    textAlign: "center",
-    color: "#777",
-    marginBottom: 32,
-    fontSize: 15,
+  formCard: {
+    backgroundColor: colors.obsidian + "cc",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.charcoal,
+    padding: 20,
+    paddingTop: 24,
   },
   inputContainer: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   inputInner: {
-    borderBottomColor: "#2a1545",
-    borderBottomWidth: 1.5,
+    borderBottomColor: colors.charcoal,
+    borderBottomWidth: 1,
   },
   inputText: {
-    color: "#d4d4d4",
-  },
-  label: {
-    color: "#a855f7",
+    color: colors.bone,
+    fontSize: 15,
   },
   errorText: {
-    color: "#dc2626",
+    color: colors.bloodBright,
+    fontSize: 11,
   },
   buttonContainer: {
     marginTop: 12,
-    marginHorizontal: 10,
   },
   primaryButton: {
     paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: "#7c3aed",
+    borderRadius: 12,
+    backgroundColor: colors.wine,
   },
   primaryButtonText: {
-    color: "#e8e0f0",
-    fontWeight: "bold",
-    letterSpacing: 1,
+    color: colors.bone,
+    fontWeight: "600",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    fontSize: 13,
   },
   disabledButton: {
-    backgroundColor: "#1e1035",
+    backgroundColor: colors.charcoal,
+  },
+  disabledButtonText: {
+    color: colors.ghost,
   },
   outlineButton: {
-    borderColor: "#a855f7",
-    borderWidth: 1.5,
-    borderRadius: 10,
+    borderColor: colors.ember,
+    borderWidth: 1,
+    borderRadius: 12,
     paddingVertical: 12,
     backgroundColor: "transparent",
   },
   outlineButtonText: {
-    color: "#a855f7",
+    color: colors.ember,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    fontSize: 12,
   },
   toggleContainer: {
-    marginTop: 16,
+    marginTop: 20,
   },
   toggleText: {
-    color: "#7c3aed",
-    fontSize: 14,
+    color: colors.ash,
+    fontSize: 13,
+  },
+  confirmTitle: {
+    color: colors.bone,
+    fontWeight: "300",
+    letterSpacing: 2,
+    textAlign: "center",
+  },
+  confirmBody: {
+    color: colors.parchment,
+    textAlign: "center",
+    lineHeight: 24,
+    marginVertical: 16,
+    fontSize: 15,
+  },
+  emailHighlight: {
+    color: colors.ember,
+    fontStyle: "italic",
   },
 });

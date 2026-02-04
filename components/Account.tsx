@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { StyleSheet, View, Alert, ScrollView } from "react-native";
+import { StyleSheet, View, Alert, ScrollView, SafeAreaView } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { Session } from "@supabase/supabase-js";
 import Avatar from "./Avatar";
 import { useAuth } from "../auth/AuthProvider";
+import { colors, ornament } from "../theme";
 
 export default function Account({ session }: { session: Session }) {
   const { signOut } = useAuth();
@@ -68,124 +69,164 @@ export default function Account({ session }: { session: Session }) {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <Text h4 style={styles.title}>Your Profile</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.screenTitle}>Profile</Text>
+        <Text style={styles.screenOrnament}>{ornament}</Text>
 
-      <View style={styles.avatarWrap}>
-        <Avatar
-          size={150}
-          url={avatarUrl}
-          onUpload={(url: string) => {
-            setAvatarUrl(url);
-            updateProfile({ username, avatar_url: url });
-          }}
-        />
-      </View>
+        <View style={styles.avatarWrap}>
+          <Avatar
+            size={140}
+            url={avatarUrl}
+            onUpload={(url: string) => {
+              setAvatarUrl(url);
+              updateProfile({ username, avatar_url: url });
+            }}
+          />
+        </View>
 
-      <View style={styles.verticallySpaced}>
-        <Input
-          label="Email"
-          value={session?.user?.email}
-          disabled
-          labelStyle={styles.label}
-          inputStyle={styles.inputText}
-          inputContainerStyle={styles.inputInner}
-          disabledInputStyle={styles.disabledInput}
-        />
-      </View>
+        <View style={styles.card}>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>EMAIL</Text>
+            <Input
+              value={session?.user?.email}
+              disabled
+              inputStyle={styles.inputText}
+              inputContainerStyle={styles.inputInner}
+              disabledInputStyle={styles.disabledInput}
+              containerStyle={styles.inputContainer}
+            />
+          </View>
 
-      <View style={styles.verticallySpaced}>
-        <Input
-          label="Username"
-          placeholder="Enter a username"
-          placeholderTextColor="#555"
-          value={username || ""}
-          onChangeText={setUsername}
-          labelStyle={styles.label}
-          inputStyle={styles.inputText}
-          inputContainerStyle={styles.inputInner}
-        />
-      </View>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>USERNAME</Text>
+            <Input
+              placeholder="choose a name"
+              placeholderTextColor={colors.ghost}
+              value={username || ""}
+              onChangeText={setUsername}
+              inputStyle={styles.inputText}
+              inputContainerStyle={styles.inputInner}
+              containerStyle={styles.inputContainer}
+            />
+          </View>
 
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Button
-          title={loading ? "Saving..." : "Save Changes"}
-          onPress={() => updateProfile({ username, avatar_url: avatarUrl })}
-          disabled={loading}
-          buttonStyle={styles.saveButton}
-          disabledStyle={styles.disabledButton}
-          titleStyle={styles.saveButtonText}
-        />
-      </View>
+          <Button
+            title={loading ? "saving..." : "Save Changes"}
+            onPress={() => updateProfile({ username, avatar_url: avatarUrl })}
+            disabled={loading}
+            buttonStyle={styles.saveButton}
+            disabledStyle={styles.disabledButton}
+            titleStyle={styles.saveButtonText}
+            disabledTitleStyle={styles.disabledButtonText}
+            containerStyle={styles.saveContainer}
+          />
+        </View>
 
-      <View style={styles.verticallySpaced}>
-        <Button
-          type="clear"
-          title="Sign Out"
-          onPress={() => signOut()}
-          titleStyle={styles.signOutText}
-        />
-      </View>
-    </ScrollView>
+        <View style={styles.signOutWrap}>
+          <Button
+            type="clear"
+            title="sign out"
+            onPress={() => signOut()}
+            titleStyle={styles.signOutText}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: "#0a0a0a",
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.void,
   },
   container: {
-    marginTop: 40,
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
   },
-  title: {
+  screenTitle: {
+    color: colors.bone,
     textAlign: "center",
-    marginBottom: 20,
-    color: "#d4d4d4",
+    fontSize: 13,
+    letterSpacing: 4,
+    textTransform: "uppercase",
+    marginTop: 12,
+  },
+  screenOrnament: {
+    color: colors.faded,
+    textAlign: "center",
+    fontSize: 12,
+    letterSpacing: 6,
+    marginTop: 6,
+    marginBottom: 24,
   },
   avatarWrap: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 28,
   },
-  verticallySpaced: {
-    paddingVertical: 6,
-    alignSelf: "stretch",
+  card: {
+    backgroundColor: colors.obsidian,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.charcoal,
+    padding: 20,
+    paddingTop: 24,
   },
-  mt20: {
-    marginTop: 20,
+  field: {
+    marginBottom: 4,
   },
-  label: {
-    color: "#a855f7",
-    fontWeight: "normal",
-    letterSpacing: 0.5,
+  fieldLabel: {
+    color: colors.amberMuted,
+    fontSize: 10,
+    letterSpacing: 3,
+    marginBottom: 0,
+    marginLeft: 10,
+  },
+  inputContainer: {
+    marginBottom: -4,
   },
   inputText: {
-    color: "#d4d4d4",
+    color: colors.bone,
+    fontSize: 15,
   },
   inputInner: {
-    borderBottomColor: "#2a1545",
-    borderBottomWidth: 1.5,
+    borderBottomColor: colors.charcoal,
+    borderBottomWidth: 1,
   },
   disabledInput: {
-    color: "#666",
+    color: colors.ash,
     opacity: 1,
   },
+  saveContainer: {
+    marginTop: 16,
+  },
   saveButton: {
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 14,
-    backgroundColor: "#7c3aed",
+    backgroundColor: colors.wine,
   },
   saveButtonText: {
-    color: "#e8e0f0",
-    fontWeight: "bold",
-    letterSpacing: 1,
+    color: colors.bone,
+    fontWeight: "600",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    fontSize: 12,
   },
   disabledButton: {
-    backgroundColor: "#1e1035",
+    backgroundColor: colors.charcoal,
+  },
+  disabledButtonText: {
+    color: colors.ghost,
+  },
+  signOutWrap: {
+    marginTop: 24,
+    alignItems: "center",
   },
   signOutText: {
-    color: "#dc2626",
-    letterSpacing: 0.5,
+    color: colors.blood,
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
 });

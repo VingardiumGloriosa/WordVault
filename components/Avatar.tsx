@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { StyleSheet, View, Alert, Image } from "react-native";
-import { Button } from "@rneui/themed";
+import { Button, Text } from "@rneui/themed";
 import * as ImagePicker from "expo-image-picker";
+import { colors } from "../theme";
 
 interface Props {
   size: number;
@@ -93,17 +94,21 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
 
   return (
     <View style={styles.wrapper}>
-      {avatarUrl ? (
-        <Image
-          source={{ uri: avatarUrl }}
-          accessibilityLabel="Avatar"
-          style={[avatarSize, styles.avatar, styles.image]}
-        />
-      ) : (
-        <View style={[avatarSize, styles.avatar, styles.noImage]} />
-      )}
+      <View style={styles.ring}>
+        {avatarUrl ? (
+          <Image
+            source={{ uri: avatarUrl }}
+            accessibilityLabel="Avatar"
+            style={[avatarSize, styles.avatar, styles.image]}
+          />
+        ) : (
+          <View style={[avatarSize, styles.avatar, styles.noImage]}>
+            <Text style={styles.placeholder}>{"\u{1F5DD}"}</Text>
+          </View>
+        )}
+      </View>
       <Button
-        title={uploading ? "Uploading..." : "Upload"}
+        title={uploading ? "uploading..." : "change avatar"}
         onPress={uploadAvatar}
         disabled={uploading}
         type="outline"
@@ -119,36 +124,44 @@ const styles = StyleSheet.create({
   wrapper: {
     alignItems: "center",
   },
+  ring: {
+    borderRadius: 80,
+    borderWidth: 2,
+    borderColor: colors.wine,
+    padding: 3,
+  },
   avatar: {
     borderRadius: 75,
     overflow: "hidden",
-    maxWidth: "100%",
-    borderWidth: 2,
-    borderColor: "#7c3aed",
   },
   image: {
     objectFit: "cover",
-    paddingTop: 0,
   },
   noImage: {
-    backgroundColor: "#1a1a1a",
-    borderWidth: 2,
-    borderStyle: "solid",
-    borderColor: "#7c3aed",
+    backgroundColor: colors.smoke,
     borderRadius: 75,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholder: {
+    fontSize: 40,
+    opacity: 0.3,
   },
   uploadButton: {
-    marginTop: 12,
+    marginTop: 14,
   },
   uploadButtonInner: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
     borderRadius: 10,
-    borderColor: "#a855f7",
-    borderWidth: 1.5,
+    borderColor: colors.charcoal,
+    borderWidth: 1,
     backgroundColor: "transparent",
   },
   uploadButtonText: {
-    color: "#a855f7",
-    letterSpacing: 0.5,
+    color: colors.ash,
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
 });

@@ -1,8 +1,9 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text } from "react-native";
+import { Text, StyleSheet } from "react-native";
 import SearchScreen from "../screens/SearchScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SavedScreen from "../screens/SavedScreen";
+import { colors } from "../theme";
 
 const Tab = createBottomTabNavigator();
 
@@ -12,13 +13,20 @@ export default function AppTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#111",
-          borderTopColor: "#2a1545",
+          backgroundColor: colors.obsidian,
+          borderTopColor: colors.charcoal,
           borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
-        tabBarActiveTintColor: "#a855f7",
-        tabBarInactiveTintColor: "#555",
-        tabBarLabelStyle: { fontSize: 11, letterSpacing: 0.5 },
+        tabBarActiveTintColor: colors.ember,
+        tabBarInactiveTintColor: colors.ghost,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          letterSpacing: 2,
+          textTransform: "uppercase",
+        },
       }}
     >
       <Tab.Screen
@@ -26,7 +34,7 @@ export default function AppTabs() {
         component={SearchScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>&#128269;</Text>
+            <Text style={[styles.icon, { color }]}>{"\u{1F50D}"}</Text>
           ),
         }}
       />
@@ -35,7 +43,7 @@ export default function AppTabs() {
         component={SavedScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>&#128278;</Text>
+            <Text style={[styles.icon, { color }]}>{"\u{1F4D6}"}</Text>
           ),
         }}
       />
@@ -44,10 +52,16 @@ export default function AppTabs() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>&#128100;</Text>
+            <Text style={[styles.icon, { color }]}>{"\u{1F5DD}"}</Text>
           ),
         }}
       />
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  icon: {
+    fontSize: 18,
+  },
+});

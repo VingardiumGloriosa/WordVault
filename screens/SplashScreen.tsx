@@ -1,14 +1,22 @@
 import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@rneui/themed";
+import { colors, ornament } from "../theme";
 
 export default function SplashScreen() {
   return (
-    <View style={styles.container}>
-      <Text h1 style={styles.title}>WordVault</Text>
-      <Text style={styles.subtitle}>look it up, babe</Text>
-      <ActivityIndicator size="large" color="#a855f7" style={styles.spinner} />
-    </View>
+    <LinearGradient
+      colors={[colors.void, colors.abyss, colors.burgundy + "40", colors.void]}
+      locations={[0, 0.3, 0.6, 1]}
+      style={styles.container}
+    >
+      <Text style={styles.ornamentTop}>{ornament}</Text>
+      <Text h1 h1Style={styles.title}>WordVault</Text>
+      <Text style={styles.subtitle}>a compendium of language</Text>
+      <Text style={styles.ornamentBottom}>{ornament}</Text>
+      <ActivityIndicator size="small" color={colors.ember} style={styles.spinner} />
+    </LinearGradient>
   );
 }
 
@@ -17,21 +25,34 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#0a0a0a",
+  },
+  ornamentTop: {
+    color: colors.faded,
+    fontSize: 16,
+    marginBottom: 16,
+    letterSpacing: 6,
   },
   title: {
-    color: "#a855f7",
-    marginBottom: 4,
-    letterSpacing: 2,
+    color: colors.bone,
+    letterSpacing: 6,
+    textTransform: "uppercase",
+    fontWeight: "300",
+    fontSize: 32,
   },
   subtitle: {
-    color: "#666",
-    fontSize: 14,
+    color: colors.ash,
+    fontSize: 13,
     fontStyle: "italic",
-    marginBottom: 32,
-    letterSpacing: 1,
+    marginTop: 6,
+    letterSpacing: 3,
+  },
+  ornamentBottom: {
+    color: colors.faded,
+    fontSize: 16,
+    marginTop: 16,
+    letterSpacing: 6,
   },
   spinner: {
-    marginTop: 8,
+    marginTop: 40,
   },
 });

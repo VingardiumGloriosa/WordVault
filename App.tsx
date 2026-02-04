@@ -3,6 +3,7 @@ import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ThemeProvider, createTheme } from "@rneui/themed";
 import { AuthProvider } from "./auth/AuthProvider";
+import { colors } from "./theme";
 
 import SplashScreen from "./screens/SplashScreen";
 import SignInScreen from "./screens/SignInScreen";
@@ -10,23 +11,23 @@ import AppTabs from "./navigation/AppTabs";
 
 import { useIsSignedIn, useIsSignedOut } from "./auth/AuthHooks";
 
-const gothNavTheme = {
+const navTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: "#0a0a0a",
-    card: "#111",
-    text: "#d4d4d4",
-    border: "#2a1545",
-    primary: "#a855f7",
+    background: colors.void,
+    card: colors.obsidian,
+    text: colors.bone,
+    border: colors.charcoal,
+    primary: colors.ember,
   },
 };
 
 const rneuiTheme = createTheme({
   darkColors: {
-    primary: "#a855f7",
-    secondary: "#dc2626",
-    background: "#0a0a0a",
+    primary: colors.ember,
+    secondary: colors.wine,
+    background: colors.void,
   },
   mode: "dark",
 });
@@ -40,9 +41,9 @@ function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: "#111" },
-        headerTintColor: "#a855f7",
-        headerTitleStyle: { color: "#d4d4d4" },
+        headerStyle: { backgroundColor: colors.obsidian },
+        headerTintColor: colors.ember,
+        headerTitleStyle: { color: colors.bone },
       }}
     >
       {!isSignedIn && !isSignedOut && (
@@ -76,7 +77,7 @@ export default function App() {
   return (
     <ThemeProvider theme={rneuiTheme}>
       <AuthProvider>
-        <NavigationContainer theme={gothNavTheme}>
+        <NavigationContainer theme={navTheme}>
           <RootNavigator />
         </NavigationContainer>
       </AuthProvider>
