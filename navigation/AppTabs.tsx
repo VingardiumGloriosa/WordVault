@@ -3,6 +3,7 @@ import { Text, StyleSheet } from "react-native";
 import SearchScreen from "../screens/SearchScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SavedScreen from "../screens/SavedScreen";
+import LearnStack from "./LearnStack";
 import { colors } from "../theme";
 
 const Tab = createBottomTabNavigator();
@@ -44,6 +45,15 @@ export default function AppTabs() {
         options={{
           tabBarIcon: ({ color }) => (
             <Text style={[styles.icon, { color }]}>{"\u{1F4D6}"}</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Learn"
+        component={LearnStack}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Text style={[styles.icon, { color }]}>{"\u{1F9E0}"}</Text>
           ),
         }}
       />

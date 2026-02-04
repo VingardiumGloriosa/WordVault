@@ -3,6 +3,7 @@
 .env 
 CLAUDE.md
 .claude
+.supabase_migration.sql
 
 
 # dependencies
