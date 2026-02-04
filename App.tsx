@@ -1,6 +1,7 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { ThemeProvider, createTheme } from "@rneui/themed";
 import { AuthProvider } from "./auth/AuthProvider";
 
 import SplashScreen from "./screens/SplashScreen";
@@ -9,6 +10,27 @@ import AppTabs from "./navigation/AppTabs";
 
 import { useIsSignedIn, useIsSignedOut } from "./auth/AuthHooks";
 
+const gothNavTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: "#0a0a0a",
+    card: "#111",
+    text: "#d4d4d4",
+    border: "#2a1545",
+    primary: "#a855f7",
+  },
+};
+
+const rneuiTheme = createTheme({
+  darkColors: {
+    primary: "#a855f7",
+    secondary: "#dc2626",
+    background: "#0a0a0a",
+  },
+  mode: "dark",
+});
+
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
@@ -16,7 +38,13 @@ function RootNavigator() {
   const isSignedOut = useIsSignedOut();
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: "#111" },
+        headerTintColor: "#a855f7",
+        headerTitleStyle: { color: "#d4d4d4" },
+      }}
+    >
       {!isSignedIn && !isSignedOut && (
         <Stack.Screen
           name="Splash"
@@ -29,7 +57,7 @@ function RootNavigator() {
         <Stack.Screen
           name="SignIn"
           component={SignInScreen}
-          options={{ title: "Log In" }}
+          options={{ headerShown: false }}
         />
       )}
 
@@ -46,10 +74,12 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <ThemeProvider theme={rneuiTheme}>
+      <AuthProvider>
+        <NavigationContainer theme={gothNavTheme}>
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

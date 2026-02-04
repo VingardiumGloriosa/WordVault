@@ -2,6 +2,8 @@
 
 .env 
 CLAUDE.md
+.claude
+
 
 # dependencies
 node_modules/

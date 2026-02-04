@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { StyleSheet, View, Alert, Image, Button } from "react-native";
+import { StyleSheet, View, Alert, Image } from "react-native";
+import { Button } from "@rneui/themed";
 import * as ImagePicker from "expo-image-picker";
 
 interface Props {
@@ -35,7 +36,7 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
       };
     } catch (error) {
       if (error instanceof Error) {
-        console.log("Error downloading image: ", error.message);
+        Alert.alert("Error", "Could not download avatar image.");
       }
     }
   }
@@ -45,23 +46,21 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
       setUploading(true);
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Restrict to only images
-        allowsMultipleSelection: false, // Can only select one image
-        allowsEditing: true, // Allows the user to crop / rotate their photo before uploading it
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: false,
+        allowsEditing: true,
         quality: 1,
-        exif: false, // We don't want nor need that data.
+        exif: false,
       });
 
       if (result.canceled || !result.assets || result.assets.length === 0) {
-        console.log("User cancelled image picker.");
         return;
       }
 
       const image = result.assets[0];
-      console.log("Got image", image);
 
       if (!image.uri) {
-        throw new Error("No image uri!"); // Realistically, this should never happen, but just in case...
+        throw new Error("No image uri!");
       }
 
       const arraybuffer = await fetch(image.uri).then((res) =>
@@ -93,7 +92,7 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
   }
 
   return (
-    <View>
+    <View style={styles.wrapper}>
       {avatarUrl ? (
         <Image
           source={{ uri: avatarUrl }}
@@ -103,32 +102,53 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
       ) : (
         <View style={[avatarSize, styles.avatar, styles.noImage]} />
       )}
-      <View>
-        <Button
-          title={uploading ? "Uploading ..." : "Upload"}
-          onPress={uploadAvatar}
-          disabled={uploading}
-        />
-      </View>
+      <Button
+        title={uploading ? "Uploading..." : "Upload"}
+        onPress={uploadAvatar}
+        disabled={uploading}
+        type="outline"
+        containerStyle={styles.uploadButton}
+        buttonStyle={styles.uploadButtonInner}
+        titleStyle={styles.uploadButtonText}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: "center",
+  },
   avatar: {
-    borderRadius: 50,
+    borderRadius: 75,
     overflow: "hidden",
     maxWidth: "100%",
+    borderWidth: 2,
+    borderColor: "#7c3aed",
   },
   image: {
     objectFit: "cover",
     paddingTop: 0,
   },
   noImage: {
-    backgroundColor: "#333",
-    borderWidth: 1,
+    backgroundColor: "#1a1a1a",
+    borderWidth: 2,
     borderStyle: "solid",
-    borderColor: "rgb(200, 200, 200)",
-    borderRadius: 50,
+    borderColor: "#7c3aed",
+    borderRadius: 75,
+  },
+  uploadButton: {
+    marginTop: 12,
+  },
+  uploadButtonInner: {
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    borderColor: "#a855f7",
+    borderWidth: 1.5,
+    backgroundColor: "transparent",
+  },
+  uploadButtonText: {
+    color: "#a855f7",
+    letterSpacing: 0.5,
   },
 });

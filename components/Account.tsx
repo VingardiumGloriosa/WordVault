@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { StyleSheet, View, Alert } from "react-native";
+import { StyleSheet, View, Alert, ScrollView } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { Session } from "@supabase/supabase-js";
 import Avatar from "./Avatar";
@@ -19,7 +19,7 @@ export default function Account({ session }: { session: Session }) {
   async function getProfile() {
     try {
       setLoading(true);
-      if (!session?.user) throw new Error("You’re not logged in yet 💫");
+      if (!session?.user) throw new Error("No active session");
 
       const { data, error, status } = await supabase
         .from("profiles")
@@ -34,7 +34,7 @@ export default function Account({ session }: { session: Session }) {
         setAvatarUrl(data.avatar_url);
       }
     } catch (error) {
-      if (error instanceof Error) Alert.alert("Oops!", error.message);
+      if (error instanceof Error) Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ export default function Account({ session }: { session: Session }) {
   }) {
     try {
       setLoading(true);
-      if (!session?.user) throw new Error("You’re not logged in yet 💫");
+      if (!session?.user) throw new Error("No active session");
 
       const updates = {
         id: session.user.id,
@@ -61,17 +61,15 @@ export default function Account({ session }: { session: Session }) {
       const { error } = await supabase.from("profiles").upsert(updates);
       if (error) throw error;
     } catch (error) {
-      if (error instanceof Error) Alert.alert("Uh-oh!", error.message);
+      if (error instanceof Error) Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text h4 style={styles.title}>
-        Your Profile ✨
-      </Text>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+      <Text h4 style={styles.title}>Your Profile</Text>
 
       <View style={styles.avatarWrap}>
         <Avatar
@@ -82,58 +80,73 @@ export default function Account({ session }: { session: Session }) {
             updateProfile({ username, avatar_url: url });
           }}
         />
-        <Text style={styles.helperText}>Tap to change your look 💅</Text>
-      </View>
-
-      <View style={styles.verticallySpaced}>
-        <Input label="Email 💌" value={session?.user?.email} disabled />
       </View>
 
       <View style={styles.verticallySpaced}>
         <Input
-          label="Username ✨"
-          placeholder="Pick something cute"
+          label="Email"
+          value={session?.user?.email}
+          disabled
+          labelStyle={styles.label}
+          inputStyle={styles.inputText}
+          inputContainerStyle={styles.inputInner}
+          disabledInputStyle={styles.disabledInput}
+        />
+      </View>
+
+      <View style={styles.verticallySpaced}>
+        <Input
+          label="Username"
+          placeholder="Enter a username"
+          placeholderTextColor="#555"
           value={username || ""}
           onChangeText={setUsername}
+          labelStyle={styles.label}
+          inputStyle={styles.inputText}
+          inputContainerStyle={styles.inputInner}
         />
       </View>
 
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Button
-          title={loading ? "Saving magic…" : "Save changes 💾"}
+          title={loading ? "Saving..." : "Save Changes"}
           onPress={() => updateProfile({ username, avatar_url: avatarUrl })}
           disabled={loading}
+          buttonStyle={styles.saveButton}
+          disabledStyle={styles.disabledButton}
+          titleStyle={styles.saveButtonText}
         />
       </View>
 
       <View style={styles.verticallySpaced}>
         <Button
           type="clear"
-          title="Sign out 👋"
+          title="Sign Out"
           onPress={() => signOut()}
+          titleStyle={styles.signOutText}
         />
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    backgroundColor: "#0a0a0a",
+  },
   container: {
     marginTop: 40,
     padding: 16,
+    paddingBottom: 40,
   },
   title: {
     textAlign: "center",
     marginBottom: 20,
+    color: "#d4d4d4",
   },
   avatarWrap: {
     alignItems: "center",
     marginBottom: 24,
-  },
-  helperText: {
-    marginTop: 8,
-    fontSize: 12,
-    opacity: 0.6,
   },
   verticallySpaced: {
     paddingVertical: 6,
@@ -141,5 +154,38 @@ const styles = StyleSheet.create({
   },
   mt20: {
     marginTop: 20,
+  },
+  label: {
+    color: "#a855f7",
+    fontWeight: "normal",
+    letterSpacing: 0.5,
+  },
+  inputText: {
+    color: "#d4d4d4",
+  },
+  inputInner: {
+    borderBottomColor: "#2a1545",
+    borderBottomWidth: 1.5,
+  },
+  disabledInput: {
+    color: "#666",
+    opacity: 1,
+  },
+  saveButton: {
+    borderRadius: 10,
+    paddingVertical: 14,
+    backgroundColor: "#7c3aed",
+  },
+  saveButtonText: {
+    color: "#e8e0f0",
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+  disabledButton: {
+    backgroundColor: "#1e1035",
+  },
+  signOutText: {
+    color: "#dc2626",
+    letterSpacing: 0.5,
   },
 });

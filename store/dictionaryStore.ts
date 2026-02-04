@@ -44,9 +44,10 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
       const data = await res.json();
 
       set({ result: data, loading: false });
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
       set({
-        error: err.message ?? "Something went wrong",
+        error: message,
         result: null,
         loading: false,
       });
