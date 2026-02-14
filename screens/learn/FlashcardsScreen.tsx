@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Platform,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
@@ -55,7 +56,7 @@ export default function FlashcardsScreen() {
       toValue: isFlipped ? 0 : 1,
       friction: 8,
       tension: 10,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
     setIsFlipped(!isFlipped);
   }, [isFlipped, flipAnim]);
