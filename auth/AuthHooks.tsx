@@ -13,3 +13,8 @@ export function useAuthLoading() {
   const { loading } = useAuth();
   return loading;
 }
+
+export function useIsRecoveryFlow() {
+  const { isRecoveryFlow } = useAuth();
+  return isRecoveryFlow;
+}

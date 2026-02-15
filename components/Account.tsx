@@ -6,11 +6,13 @@ import { Session } from "@supabase/supabase-js";
 import Avatar from "./Avatar";
 import { useAuth } from "../auth/AuthProvider";
 import { colors, ornament } from "../theme";
+import { validateUsername } from "../lib/authErrors";
 
 export default function Account({ session }: { session: Session }) {
   const { signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
@@ -51,6 +53,12 @@ export default function Account({ session }: { session: Session }) {
     try {
       setLoading(true);
       if (!session?.user) throw new Error("No active session");
+
+      const usernameErr = validateUsername(username);
+      if (usernameErr) {
+        setUsernameError(usernameErr);
+        return;
+      }
 
       const updates = {
         id: session.user.id,
@@ -104,10 +112,15 @@ export default function Account({ session }: { session: Session }) {
               placeholder="choose a name"
               placeholderTextColor={colors.ghost}
               value={username || ""}
-              onChangeText={setUsername}
+              onChangeText={(text) => {
+                setUsername(text);
+                setUsernameError(text.length > 0 ? validateUsername(text) : null);
+              }}
+              errorMessage={usernameError ?? undefined}
               inputStyle={styles.inputText}
               inputContainerStyle={styles.inputInner}
               containerStyle={styles.inputContainer}
+              errorStyle={styles.errorText}
             />
           </View>
 
@@ -127,7 +140,16 @@ export default function Account({ session }: { session: Session }) {
           <Button
             type="clear"
             title="sign out"
-            onPress={() => signOut()}
+            onPress={() =>
+              Alert.alert(
+                "Sign Out",
+                "Are you sure you want to sign out?",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Sign Out", style: "destructive", onPress: () => signOut() },
+                ],
+              )
+            }
             titleStyle={styles.signOutText}
           />
         </View>
@@ -228,5 +250,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     textTransform: "uppercase",
+  },
+  errorText: {
+    color: colors.bloodBright,
+    fontSize: 11,
   },
 });
