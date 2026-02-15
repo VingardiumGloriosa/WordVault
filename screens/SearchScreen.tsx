@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, Alert, StyleSheet, ScrollView, SafeAreaView } from "react-native";
 import { Input, Text, Button } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
@@ -6,10 +7,11 @@ import { useAuth } from "../auth/AuthProvider";
 import { colors, ornament } from "../theme";
 
 export default function SearchScreen() {
-  const { search, result, loading, error, saveCurrentWord } =
+  const { search, result, loading, error, saveCurrentWord, clearResult } =
     useDictionaryStore();
   const { session } = useAuth();
   const navigation = useNavigation<any>();
+  const [searchText, setSearchText] = useState("");
 
   const entry = result?.[0];
 
@@ -18,6 +20,8 @@ export default function SearchScreen() {
     try {
       await saveCurrentWord(entry, session.user.id);
       Alert.alert("Saved", `"${entry.word}" has been added to your collection.`);
+      setSearchText("");
+      clearResult();
     } catch (err) {
       if (err instanceof Error) {
         Alert.alert("Save Failed", err.message);
@@ -35,7 +39,9 @@ export default function SearchScreen() {
           <Input
             placeholder="enter a word..."
             placeholderTextColor={colors.ghost}
-            onSubmitEditing={(e) => search(e.nativeEvent.text)}
+            value={searchText}
+            onChangeText={setSearchText}
+            onSubmitEditing={() => search(searchText)}
             returnKeyType="search"
             leftIcon={{ name: "search", type: "material", color: colors.amberMuted, size: 18 }}
             containerStyle={styles.searchContainer}

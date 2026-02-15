@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Alert, StyleSheet, SafeAreaView } from "react-native";
+import { View, Alert, Platform, StyleSheet, SafeAreaView } from "react-native";
 import { Text, Button } from "@rneui/themed";
 import { FlatList } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
@@ -36,24 +36,28 @@ export default function SavedScreen() {
     }, [session]),
   );
 
-  const handleDelete = (id: string, word: string) => {
-    Alert.alert("Remove Word", `Remove "${word}" from your collection?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteSavedWord(id);
-            setWords((prev) => prev.filter((w) => w.id !== id));
-          } catch (err) {
-            if (err instanceof Error) {
-              Alert.alert("Error", err.message);
-            }
-          }
-        },
-      },
-    ]);
+  const handleDelete = async (id: string, word: string) => {
+    const doDelete = async () => {
+      try {
+        await deleteSavedWord(id);
+        setWords((prev) => prev.filter((w) => w.id !== id));
+      } catch (err) {
+        if (err instanceof Error) {
+          Alert.alert("Error", err.message);
+        }
+      }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm(`Remove "${word}" from your collection?`)) {
+        await doDelete();
+      }
+    } else {
+      Alert.alert("Remove Word", `Remove "${word}" from your collection?`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: doDelete },
+      ]);
+    }
   };
 
   const renderHeader = () => (

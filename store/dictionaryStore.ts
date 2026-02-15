@@ -22,6 +22,7 @@ type DictionaryState = {
 
   search: (word: string) => Promise<void>;
   saveCurrentWord: (entry: DictionaryEntry, userId: string) => Promise<void>;
+  clearResult: () => void;
 };
 
 export const useDictionaryStore = create<DictionaryState>((set) => ({
@@ -53,6 +54,8 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
       });
     }
   },
+
+  clearResult: () => set({ result: null, error: null }),
 
   saveCurrentWord: async (entry, userId) => {
     const meaning = entry.meanings[0];
