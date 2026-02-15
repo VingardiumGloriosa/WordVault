@@ -1,5 +1,6 @@
 import { View, Alert, StyleSheet, ScrollView, SafeAreaView } from "react-native";
 import { Input, Text, Button } from "@rneui/themed";
+import { useNavigation } from "@react-navigation/native";
 import { useDictionaryStore } from "../store/dictionaryStore";
 import { useAuth } from "../auth/AuthProvider";
 import { colors, ornament } from "../theme";
@@ -8,6 +9,7 @@ export default function SearchScreen() {
   const { search, result, loading, error, saveCurrentWord } =
     useDictionaryStore();
   const { session } = useAuth();
+  const navigation = useNavigation<any>();
 
   const entry = result?.[0];
 
@@ -82,13 +84,24 @@ export default function SearchScreen() {
             ))}
 
             <View style={styles.saveWrap}>
-              <Button
-                title="Save to Collection"
-                onPress={handleSave}
-                buttonStyle={styles.saveButton}
-                titleStyle={styles.saveButtonText}
-                containerStyle={styles.saveContainer}
-              />
+              {session ? (
+                <Button
+                  title="Save to Collection"
+                  onPress={handleSave}
+                  buttonStyle={styles.saveButton}
+                  titleStyle={styles.saveButtonText}
+                  containerStyle={styles.saveContainer}
+                />
+              ) : (
+                <Button
+                  title="Sign In to Save"
+                  onPress={() => navigation.navigate("Profile")}
+                  type="outline"
+                  buttonStyle={styles.guestSaveButton}
+                  titleStyle={styles.guestSaveButtonText}
+                  containerStyle={styles.saveContainer}
+                />
+              )}
             </View>
           </View>
         )}
@@ -257,6 +270,20 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: colors.bone,
+    fontWeight: "600",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    fontSize: 12,
+  },
+  guestSaveButton: {
+    borderRadius: 12,
+    paddingVertical: 13,
+    borderColor: colors.charcoal,
+    borderWidth: 1,
+    backgroundColor: "transparent",
+  },
+  guestSaveButtonText: {
+    color: colors.ash,
     fontWeight: "600",
     letterSpacing: 2,
     textTransform: "uppercase",

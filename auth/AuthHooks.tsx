@@ -8,3 +8,8 @@ export function useIsSignedIn() {
 export function useIsSignedOut() {
   return !useIsSignedIn();
 }
+
+export function useAuthLoading() {
+  const { loading } = useAuth();
+  return loading;
+}

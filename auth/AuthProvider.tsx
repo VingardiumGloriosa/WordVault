@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 
 type AuthContextType = {
   session: Session | null;
+  loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -23,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -33,6 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setSession(data.session);
     }).catch(() => {
       setSession(null);
+    }).finally(() => {
+      setLoading(false);
     });
     return () => {
       authListener.subscription.unsubscribe();
@@ -61,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ session, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

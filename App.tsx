@@ -6,10 +6,9 @@ import { AuthProvider } from "./auth/AuthProvider";
 import { colors } from "./theme";
 
 import SplashScreen from "./screens/SplashScreen";
-import SignInScreen from "./screens/SignInScreen";
 import AppTabs from "./navigation/AppTabs";
 
-import { useIsSignedIn, useIsSignedOut } from "./auth/AuthHooks";
+import { useAuthLoading } from "./auth/AuthHooks";
 
 const navTheme = {
   ...DarkTheme,
@@ -35,8 +34,7 @@ const rneuiTheme = createTheme({
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
-  const isSignedIn = useIsSignedIn();
-  const isSignedOut = useIsSignedOut();
+  const loading = useAuthLoading();
 
   return (
     <Stack.Navigator
@@ -46,23 +44,13 @@ function RootNavigator() {
         headerTitleStyle: { color: colors.bone },
       }}
     >
-      {!isSignedIn && !isSignedOut && (
+      {loading ? (
         <Stack.Screen
           name="Splash"
           component={SplashScreen}
           options={{ headerShown: false }}
         />
-      )}
-
-      {isSignedOut && (
-        <Stack.Screen
-          name="SignIn"
-          component={SignInScreen}
-          options={{ headerShown: false }}
-        />
-      )}
-
-      {isSignedIn && (
+      ) : (
         <Stack.Screen
           name="App"
           component={AppTabs}

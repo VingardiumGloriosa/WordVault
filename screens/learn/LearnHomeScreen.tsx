@@ -10,6 +10,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "../../auth/AuthProvider";
 import { useLearnStore } from "../../store/learnStore";
+import GuestPrompt from "../../components/GuestPrompt";
 import { colors, ornament } from "../../theme";
 import { LearnStackParamList } from "../../navigation/LearnStack";
 
@@ -63,6 +64,22 @@ export default function LearnHomeScreen() {
       onPress: () => navigation.navigate("MatchGame"),
     },
   ];
+
+  if (!session) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.headerBlock}>
+          <Text style={styles.screenTitle}>Learn</Text>
+          <Text style={styles.screenOrnament}>{ornament}</Text>
+        </View>
+        <GuestPrompt
+          icon={"\u{1F9E0}"}
+          title="Learning Hub"
+          message={"Sign in to access flashcards,\nquizzes, and word matching."}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>

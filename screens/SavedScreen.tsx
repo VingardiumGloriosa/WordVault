@@ -5,6 +5,7 @@ import { FlatList } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../auth/AuthProvider";
 import { fetchSavedWords, deleteSavedWord } from "../lib/savedWords";
+import GuestPrompt from "../components/GuestPrompt";
 import { colors, ornament } from "../theme";
 
 interface SavedWord {
@@ -64,6 +65,19 @@ export default function SavedScreen() {
       )}
     </View>
   );
+
+  if (!session) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        {renderHeader()}
+        <GuestPrompt
+          icon={"\u{1F4DA}"}
+          title="Your Collection Awaits"
+          message={"Sign in to save words and\nbuild your personal lexicon."}
+        />
+      </SafeAreaView>
+    );
+  }
 
   if (error) {
     return (
