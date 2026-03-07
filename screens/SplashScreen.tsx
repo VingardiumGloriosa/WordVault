@@ -3,6 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@rneui/themed";
 import { colors, ornament } from "../theme";
+import ScreenContainer from "../components/ScreenContainer";
 
 export default function SplashScreen() {
   return (
@@ -11,11 +12,13 @@ export default function SplashScreen() {
       locations={[0, 0.3, 0.6, 1]}
       style={styles.container}
     >
+      <ScreenContainer style={{ justifyContent: "center", alignItems: "center" }}>
       <Text style={styles.ornamentTop}>{ornament}</Text>
       <Text h1 h1Style={styles.title}>WordVault</Text>
       <Text style={styles.subtitle}>a compendium of language</Text>
       <Text style={styles.ornamentBottom}>{ornament}</Text>
       <ActivityIndicator size="small" color={colors.ember} style={styles.spinner} />
+      </ScreenContainer>
     </LinearGradient>
   );
 }

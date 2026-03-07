@@ -16,6 +16,7 @@ import {
   SavedWordWithProgress,
 } from "../../lib/learningProgress";
 import { colors, ornament } from "../../theme";
+import ScreenContainer from "../../components/ScreenContainer";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -122,6 +123,7 @@ export default function QuizScreen() {
 
     return (
       <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
         <View style={styles.centered}>
           <Text style={styles.summaryTitle}>Quiz Complete</Text>
           <Text style={styles.screenOrnament}>{ornament}</Text>
@@ -138,6 +140,7 @@ export default function QuizScreen() {
             containerStyle={{ marginTop: 32 }}
           />
         </View>
+        </ScreenContainer>
       </SafeAreaView>
     );
   }
@@ -146,6 +149,7 @@ export default function QuizScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ScreenContainer>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>{"\u2190"}</Text>
@@ -184,6 +188,7 @@ export default function QuizScreen() {
           );
         })}
       </View>
+      </ScreenContainer>
     </SafeAreaView>
   );
 }

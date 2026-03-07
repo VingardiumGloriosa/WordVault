@@ -19,8 +19,9 @@ import {
   SavedWordWithProgress,
 } from "../../lib/learningProgress";
 import { colors, ornament } from "../../theme";
+import ScreenContainer from "../../components/ScreenContainer";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SCREEN_WIDTH = Math.min(Dimensions.get("window").width, 480);
 
 export default function FlashcardsScreen() {
   const { session } = useAuth();
@@ -131,6 +132,7 @@ export default function FlashcardsScreen() {
 
     return (
       <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
         <View style={styles.centered}>
           <Text style={styles.summaryTitle}>Session Complete</Text>
           <Text style={styles.screenOrnament}>{ornament}</Text>
@@ -147,6 +149,7 @@ export default function FlashcardsScreen() {
             containerStyle={{ marginTop: 32 }}
           />
         </View>
+        </ScreenContainer>
       </SafeAreaView>
     );
   }
@@ -155,6 +158,7 @@ export default function FlashcardsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ScreenContainer>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>{"\u2190"}</Text>
@@ -215,6 +219,7 @@ export default function FlashcardsScreen() {
           <Text style={styles.gradeButtonText}>Got It</Text>
         </TouchableOpacity>
       </View>
+      </ScreenContainer>
     </SafeAreaView>
   );
 }

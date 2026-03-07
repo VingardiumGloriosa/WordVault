@@ -9,6 +9,7 @@ import {
   friendlyAuthError,
   validatePassword,
 } from "../lib/authErrors";
+import ScreenContainer from "../components/ScreenContainer";
 
 type Mode = "magic" | "password" | "checkEmail" | "resetPassword";
 type CheckEmailContext = "magic" | "reset" | "signup";
@@ -162,6 +163,7 @@ export default function SignInScreen() {
         locations={[0, 0.3, 0.7, 1]}
         style={styles.container}
       >
+        <ScreenContainer style={{ justifyContent: "center", padding: 28 }}>
         <Text style={styles.ornament}>{ornament}</Text>
         <Text h3 h3Style={styles.confirmTitle}>Check Your Email</Text>
         <Text style={styles.confirmBody}>
@@ -188,6 +190,7 @@ export default function SignInScreen() {
           containerStyle={{ marginTop: 12 }}
           titleStyle={styles.toggleText}
         />
+        </ScreenContainer>
       </LinearGradient>
     );
   }
@@ -200,6 +203,7 @@ export default function SignInScreen() {
         locations={[0, 0.4, 0.7, 1]}
         style={styles.flex}
       >
+        <ScreenContainer>
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -271,6 +275,7 @@ export default function SignInScreen() {
             titleStyle={styles.toggleText}
           />
         </KeyboardAvoidingView>
+        </ScreenContainer>
       </LinearGradient>
     );
   }
@@ -283,6 +288,7 @@ export default function SignInScreen() {
         locations={[0, 0.4, 0.7, 1]}
         style={styles.flex}
       >
+        <ScreenContainer>
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -331,6 +337,7 @@ export default function SignInScreen() {
             titleStyle={styles.toggleText}
           />
         </KeyboardAvoidingView>
+        </ScreenContainer>
       </LinearGradient>
     );
   }
@@ -345,6 +352,7 @@ export default function SignInScreen() {
       locations={[0, 0.4, 0.7, 1]}
       style={styles.flex}
     >
+      <ScreenContainer>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -442,6 +450,7 @@ export default function SignInScreen() {
           titleStyle={styles.toggleText}
         />
       </KeyboardAvoidingView>
+      </ScreenContainer>
     </LinearGradient>
   );
 }

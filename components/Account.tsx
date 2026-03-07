@@ -4,6 +4,7 @@ import { StyleSheet, View, Alert, ScrollView, SafeAreaView } from "react-native"
 import { Button, Input, Text } from "@rneui/themed";
 import { Session } from "@supabase/supabase-js";
 import Avatar from "./Avatar";
+import ScreenContainer from "./ScreenContainer";
 import { useAuth } from "../auth/AuthProvider";
 import { colors, ornament } from "../theme";
 import { validateUsername } from "../lib/authErrors";
@@ -79,6 +80,7 @@ export default function Account({ session }: { session: Session }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
+      <ScreenContainer>
         <Text style={styles.screenTitle}>Profile</Text>
         <Text style={styles.screenOrnament}>{ornament}</Text>
 
@@ -153,6 +155,7 @@ export default function Account({ session }: { session: Session }) {
             titleStyle={styles.signOutText}
           />
         </View>
+      </ScreenContainer>
       </ScrollView>
     </SafeAreaView>
   );

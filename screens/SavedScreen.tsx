@@ -7,6 +7,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { fetchSavedWords, deleteSavedWord } from "../lib/savedWords";
 import GuestPrompt from "../components/GuestPrompt";
 import { colors, ornament } from "../theme";
+import ScreenContainer from "../components/ScreenContainer";
 
 interface SavedWord {
   id: string;
@@ -73,12 +74,14 @@ export default function SavedScreen() {
   if (!session) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
         {renderHeader()}
         <GuestPrompt
           icon={"\u{1F4DA}"}
           title="Your Collection Awaits"
           message={"Sign in to save words and\nbuild your personal lexicon."}
         />
+        </ScreenContainer>
       </SafeAreaView>
     );
   }
@@ -86,10 +89,12 @@ export default function SavedScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
         {renderHeader()}
         <View style={styles.centered}>
           <Text style={styles.error}>{error}</Text>
         </View>
+        </ScreenContainer>
       </SafeAreaView>
     );
   }
@@ -100,6 +105,7 @@ export default function SavedScreen() {
         data={words}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
+        style={styles.flatList}
         contentContainerStyle={words.length === 0 ? styles.emptyContainer : styles.listContainer}
         ItemSeparatorComponent={() => (
           <Text style={styles.itemDivider}>{ornament}</Text>
@@ -162,6 +168,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     letterSpacing: 1,
     fontStyle: "italic",
+  },
+  flatList: {
+    maxWidth: 480,
+    width: "100%",
+    alignSelf: "center",
   },
   listContainer: {
     paddingHorizontal: 16,

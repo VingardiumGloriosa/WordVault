@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useDictionaryStore } from "../store/dictionaryStore";
 import { useAuth } from "../auth/AuthProvider";
 import { colors, ornament } from "../theme";
+import ScreenContainer from "../components/ScreenContainer";
 
 export default function SearchScreen() {
   const { search, result, loading, error, saveCurrentWord, clearResult } =
@@ -32,6 +33,7 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScreenContainer>
         <Text style={styles.screenTitle}>Search</Text>
         <Text style={styles.screenOrnament}>{ornament}</Text>
 
@@ -120,6 +122,7 @@ export default function SearchScreen() {
             </Text>
           </View>
         )}
+      </ScreenContainer>
       </ScrollView>
     </SafeAreaView>
   );

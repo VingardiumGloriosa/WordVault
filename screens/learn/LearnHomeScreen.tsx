@@ -13,6 +13,7 @@ import { useLearnStore } from "../../store/learnStore";
 import GuestPrompt from "../../components/GuestPrompt";
 import { colors, ornament } from "../../theme";
 import { LearnStackParamList } from "../../navigation/LearnStack";
+import ScreenContainer from "../../components/ScreenContainer";
 
 type Nav = NativeStackNavigationProp<LearnStackParamList, "LearnHome">;
 
@@ -68,6 +69,7 @@ export default function LearnHomeScreen() {
   if (!session) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
         <View style={styles.headerBlock}>
           <Text style={styles.screenTitle}>Learn</Text>
           <Text style={styles.screenOrnament}>{ornament}</Text>
@@ -77,12 +79,14 @@ export default function LearnHomeScreen() {
           title="Learning Hub"
           message={"Sign in to access flashcards,\nquizzes, and word matching."}
         />
+        </ScreenContainer>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ScreenContainer>
       <View style={styles.headerBlock}>
         <Text style={styles.screenTitle}>Learn</Text>
         <Text style={styles.screenOrnament}>{ornament}</Text>
@@ -143,6 +147,7 @@ export default function LearnHomeScreen() {
           </View>
         </View>
       )}
+      </ScreenContainer>
     </SafeAreaView>
   );
 }

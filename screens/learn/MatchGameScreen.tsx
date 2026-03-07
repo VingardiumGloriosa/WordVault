@@ -17,8 +17,9 @@ import {
   SavedWordWithProgress,
 } from "../../lib/learningProgress";
 import { colors, ornament } from "../../theme";
+import ScreenContainer from "../../components/ScreenContainer";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SCREEN_WIDTH = Math.min(Dimensions.get("window").width, 480);
 const TILE_GAP = 8;
 const TILE_WIDTH = (SCREEN_WIDTH - 40 - TILE_GAP * 2) / 3;
 
@@ -214,6 +215,7 @@ export default function MatchGameScreen() {
   if (done) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
         <View style={styles.centered}>
           <Text style={styles.summaryTitle}>Match Complete</Text>
           <Text style={styles.screenOrnament}>{ornament}</Text>
@@ -228,12 +230,14 @@ export default function MatchGameScreen() {
             containerStyle={{ marginTop: 32 }}
           />
         </View>
+        </ScreenContainer>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ScreenContainer>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>{"\u2190"}</Text>
@@ -277,6 +281,7 @@ export default function MatchGameScreen() {
           })}
         </View>
       </View>
+      </ScreenContainer>
     </SafeAreaView>
   );
 }
