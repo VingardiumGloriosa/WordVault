@@ -1,6 +1,3 @@
-// Victorian Occult Library — WordVault palette
-// Deep wine, warm amber glow, aged parchment against void black.
-
 export const colors = {
   // Foundations
   void: "#08070a",
@@ -31,5 +28,4 @@ export const colors = {
   success: "#5a7a4a",
 };
 
-// Ornamental separator character
 export const ornament = "\u2022 \u2726 \u2022";

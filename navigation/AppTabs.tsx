@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text, StyleSheet } from "react-native";
+import { Platform } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import SearchScreen from "../screens/SearchScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SavedScreen from "../screens/SavedScreen";
@@ -17,8 +18,8 @@ export default function AppTabs() {
           backgroundColor: colors.obsidian,
           borderTopColor: colors.charcoal,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + (Platform.OS === "web" ? 20 : 0),
+          paddingBottom: 8 + (Platform.OS === "web" ? 20 : 0),
           paddingTop: 6,
         },
         tabBarActiveTintColor: colors.ember,
@@ -34,8 +35,8 @@ export default function AppTabs() {
         name="Search"
         component={SearchScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.icon, { color }]}>{"\u{1F50D}"}</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "search" : "search-outline"} size={22} color={color} />
           ),
         }}
       />
@@ -43,8 +44,8 @@ export default function AppTabs() {
         name="Saved"
         component={SavedScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.icon, { color }]}>{"\u{1F4D6}"}</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "bookmark" : "bookmark-outline"} size={22} color={color} />
           ),
         }}
       />
@@ -52,8 +53,8 @@ export default function AppTabs() {
         name="Learn"
         component={LearnStack}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.icon, { color }]}>{"\u{1F9E0}"}</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "bulb" : "bulb-outline"} size={22} color={color} />
           ),
         }}
       />
@@ -61,17 +62,11 @@ export default function AppTabs() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Text style={[styles.icon, { color }]}>{"\u{1F5DD}"}</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
           ),
         }}
       />
     </Tab.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  icon: {
-    fontSize: 18,
-  },
-});
