@@ -15,6 +15,19 @@ export async function saveWord({
   partOfSpeech?: string;
   tag?: string;
 }) {
+  const { data: existing, error: checkError } = await supabase
+    .from("saved_words")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("word", word)
+    .limit(1);
+
+  if (checkError) throw checkError;
+
+  if (existing && existing.length > 0) {
+    throw new Error("This word is already in your collection");
+  }
+
   const { error } = await supabase.from("saved_words").insert({
     user_id: userId,
     word,

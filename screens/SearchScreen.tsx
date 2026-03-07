@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Alert, StyleSheet, ScrollView, SafeAreaView } from "react-native";
+import { View, StyleSheet, ScrollView, SafeAreaView } from "react-native";
 import { Input, Text, Button } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { useDictionaryStore } from "../store/dictionaryStore";
@@ -15,6 +15,7 @@ export default function SearchScreen() {
   const navigation = useNavigation<any>();
   const [searchText, setSearchText] = useState("");
   const [tagText, setTagText] = useState("");
+  const [saveMessage, setSaveMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const entry = result?.[0];
 
@@ -22,14 +23,12 @@ export default function SearchScreen() {
     if (!session || !entry) return;
     try {
       await saveCurrentWord(entry, session.user.id, tagText);
-      Alert.alert("Saved", `"${entry.word}" has been added to your collection.`);
-      setSearchText("");
+      setSaveMessage({ text: `"${entry.word}" added to your collection`, type: "success" });
       setTagText("");
-      clearResult();
-    } catch (err) {
-      if (err instanceof Error) {
-        Alert.alert("Save Failed", err.message);
-      }
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (err: any) {
+      setSaveMessage({ text: err?.message ?? "Something went wrong", type: "error" });
+      setTimeout(() => setSaveMessage(null), 3000);
     }
   };
 
@@ -46,7 +45,7 @@ export default function SearchScreen() {
             placeholderTextColor={colors.ghost}
             value={searchText}
             onChangeText={setSearchText}
-            onSubmitEditing={() => search(searchText)}
+            onSubmitEditing={() => { setSaveMessage(null); search(searchText); }}
             returnKeyType="search"
             leftIcon={<Ionicons name="search" size={18} color={colors.amberMuted} />}
             containerStyle={styles.searchContainer}
@@ -97,6 +96,11 @@ export default function SearchScreen() {
             <View style={styles.saveWrap}>
               {session ? (
                 <>
+                {saveMessage && (
+                  <Text style={saveMessage.type === "success" ? styles.saveSuccess : styles.saveError}>
+                    {saveMessage.text}
+                  </Text>
+                )}
                 <View style={styles.tagContainer}>
                   <Input
                     placeholder='tag (optional) e.g. "SAT prep"'
@@ -333,6 +337,18 @@ const styles = StyleSheet.create({
     fontSize: 40,
     marginBottom: 16,
     opacity: 0.4,
+  },
+  saveSuccess: {
+    color: colors.success,
+    textAlign: "center" as const,
+    marginBottom: 12,
+    fontSize: 14,
+  },
+  saveError: {
+    color: colors.bloodBright,
+    textAlign: "center" as const,
+    marginBottom: 12,
+    fontSize: 14,
   },
   emptyText: {
     color: colors.ghost,
