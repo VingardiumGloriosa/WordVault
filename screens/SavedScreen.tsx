@@ -105,7 +105,6 @@ export default function SavedScreen() {
         data={words}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
-        style={styles.flatList}
         contentContainerStyle={words.length === 0 ? styles.emptyContainer : styles.listContainer}
         ItemSeparatorComponent={() => (
           <Text style={styles.itemDivider}>{ornament}</Text>
@@ -169,17 +168,18 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontStyle: "italic",
   },
-  flatList: {
+  listContainer: {
     maxWidth: 480,
     width: "100%",
     alignSelf: "center",
-  },
-  listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 32,
   },
   emptyContainer: {
     flex: 1,
+    maxWidth: 480,
+    width: "100%",
+    alignSelf: "center",
   },
   card: {
     backgroundColor: colors.obsidian,
