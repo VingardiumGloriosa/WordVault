@@ -4,6 +4,7 @@ import { Input, Text, Button } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { useDictionaryStore } from "../store/dictionaryStore";
 import { useAuth } from "../auth/AuthProvider";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, ornament } from "../theme";
 import ScreenContainer from "../components/ScreenContainer";
 
@@ -47,7 +48,7 @@ export default function SearchScreen() {
             onChangeText={setSearchText}
             onSubmitEditing={() => search(searchText)}
             returnKeyType="search"
-            leftIcon={{ name: "search", type: "material", color: colors.amberMuted, size: 18 }}
+            leftIcon={<Ionicons name="search" size={18} color={colors.amberMuted} />}
             containerStyle={styles.searchContainer}
             inputStyle={styles.inputText}
             inputContainerStyle={styles.inputInner}
@@ -105,7 +106,7 @@ export default function SearchScreen() {
                     containerStyle={styles.tagInput}
                     inputStyle={styles.inputText}
                     inputContainerStyle={styles.tagInputInner}
-                    leftIcon={{ name: "label-outline", type: "material", color: colors.amberMuted, size: 16 }}
+                    leftIcon={<Ionicons name="pricetag-outline" size={16} color={colors.amberMuted} />}
                   />
                 </View>
                 <Button

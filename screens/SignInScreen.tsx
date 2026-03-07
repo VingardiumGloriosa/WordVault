@@ -3,6 +3,7 @@ import { View, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-n
 import { LinearGradient } from "expo-linear-gradient";
 import { Input, Button, Text } from "@rneui/themed";
 import { useAuth } from "../auth/AuthProvider";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, ornament } from "../theme";
 import {
   EMAIL_REGEX,
@@ -227,7 +228,7 @@ export default function SignInScreen() {
               errorMessage={
                 password.length > 0 ? validatePassword(password) ?? undefined : undefined
               }
-              leftIcon={{ name: "lock", type: "material", color: colors.amberMuted, size: 18 }}
+              leftIcon={<Ionicons name="lock-closed-outline" size={18} color={colors.amberMuted} />}
               containerStyle={styles.inputContainer}
               inputStyle={styles.inputText}
               inputContainerStyle={styles.inputInner}
@@ -244,7 +245,7 @@ export default function SignInScreen() {
                   ? "passwords do not match"
                   : undefined
               }
-              leftIcon={{ name: "lock-outline", type: "material", color: colors.amberMuted, size: 18 }}
+              leftIcon={<Ionicons name="lock-closed-outline" size={18} color={colors.amberMuted} />}
               containerStyle={styles.inputContainer}
               inputStyle={styles.inputText}
               inputContainerStyle={styles.inputInner}
@@ -311,7 +312,7 @@ export default function SignInScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               errorMessage={email.length > 0 && !emailValid ? "invalid email format" : undefined}
-              leftIcon={{ name: "email", type: "material", color: colors.amberMuted, size: 18 }}
+              leftIcon={<Ionicons name="mail-outline" size={18} color={colors.amberMuted} />}
               containerStyle={styles.inputContainer}
               inputStyle={styles.inputText}
               inputContainerStyle={styles.inputInner}
@@ -377,7 +378,7 @@ export default function SignInScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             errorMessage={email.length > 0 && !emailValid ? "invalid email format" : undefined}
-            leftIcon={{ name: "email", type: "material", color: colors.amberMuted, size: 18 }}
+            leftIcon={<Ionicons name="mail-outline" size={18} color={colors.amberMuted} />}
             containerStyle={styles.inputContainer}
             inputStyle={styles.inputText}
             inputContainerStyle={styles.inputInner}
@@ -395,7 +396,7 @@ export default function SignInScreen() {
                 ? validatePassword(password) ?? undefined
                 : undefined
             }
-            leftIcon={{ name: "lock", type: "material", color: colors.amberMuted, size: 18 }}
+            leftIcon={<Ionicons name="lock-closed-outline" size={18} color={colors.amberMuted} />}
             containerStyle={styles.inputContainer}
             inputStyle={styles.inputText}
             inputContainerStyle={styles.inputInner}
