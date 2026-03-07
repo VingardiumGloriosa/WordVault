@@ -13,15 +13,17 @@ export default function SearchScreen() {
   const { session } = useAuth();
   const navigation = useNavigation<any>();
   const [searchText, setSearchText] = useState("");
+  const [tagText, setTagText] = useState("");
 
   const entry = result?.[0];
 
   const handleSave = async () => {
     if (!session || !entry) return;
     try {
-      await saveCurrentWord(entry, session.user.id);
+      await saveCurrentWord(entry, session.user.id, tagText);
       Alert.alert("Saved", `"${entry.word}" has been added to your collection.`);
       setSearchText("");
+      setTagText("");
       clearResult();
     } catch (err) {
       if (err instanceof Error) {
@@ -93,6 +95,19 @@ export default function SearchScreen() {
 
             <View style={styles.saveWrap}>
               {session ? (
+                <>
+                <View style={styles.tagContainer}>
+                  <Input
+                    placeholder='tag (optional) e.g. "SAT prep"'
+                    placeholderTextColor={colors.ghost}
+                    value={tagText}
+                    onChangeText={setTagText}
+                    containerStyle={styles.tagInput}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.tagInputInner}
+                    leftIcon={{ name: "label-outline", type: "material", color: colors.amberMuted, size: 16 }}
+                  />
+                </View>
                 <Button
                   title="Save to Collection"
                   onPress={handleSave}
@@ -100,6 +115,7 @@ export default function SearchScreen() {
                   titleStyle={styles.saveButtonText}
                   containerStyle={styles.saveContainer}
                 />
+                </>
               ) : (
                 <Button
                   title="Sign In to Save"
@@ -270,6 +286,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.charcoal,
     paddingTop: 20,
+  },
+  tagContainer: {
+    marginBottom: 12,
+  },
+  tagInput: {
+    marginBottom: -8,
+  },
+  tagInputInner: {
+    borderBottomColor: colors.charcoal,
+    borderBottomWidth: 1,
   },
   saveContainer: {},
   saveButton: {

@@ -21,7 +21,7 @@ type DictionaryState = {
   error: string | null;
 
   search: (word: string) => Promise<void>;
-  saveCurrentWord: (entry: DictionaryEntry, userId: string) => Promise<void>;
+  saveCurrentWord: (entry: DictionaryEntry, userId: string, tag?: string) => Promise<void>;
   clearResult: () => void;
 };
 
@@ -57,7 +57,7 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
 
   clearResult: () => set({ result: null, error: null }),
 
-  saveCurrentWord: async (entry, userId) => {
+  saveCurrentWord: async (entry, userId, tag?) => {
     const meaning = entry.meanings[0];
     const definition = meaning.definitions[0];
 
@@ -67,6 +67,7 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
       phonetic: entry.phonetic,
       definition: definition.definition,
       partOfSpeech: meaning.partOfSpeech,
+      tag: tag?.trim() || undefined,
     });
   },
 }));

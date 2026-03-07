@@ -2,6 +2,7 @@ import React from "react";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ThemeProvider, createTheme } from "@rneui/themed";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "./auth/AuthProvider";
 import { colors } from "./theme";
 
@@ -63,12 +64,14 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <ThemeProvider theme={rneuiTheme}>
-      <AuthProvider>
-        <NavigationContainer theme={navTheme}>
-          <RootNavigator />
-        </NavigationContainer>
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider theme={rneuiTheme}>
+        <AuthProvider>
+          <NavigationContainer theme={navTheme}>
+            <RootNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

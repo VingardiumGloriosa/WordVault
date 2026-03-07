@@ -21,17 +21,25 @@ export type SavedWordWithProgress = {
   phonetic?: string;
   definition: string;
   part_of_speech: string;
+  tag?: string;
   progress: WordProgress | null;
 };
 
 export async function fetchWordsWithProgress(
   userId: string,
+  tag?: string | null,
 ): Promise<SavedWordWithProgress[]> {
-  const { data: savedWords, error: swErr } = await supabase
+  let query = supabase
     .from("saved_words")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+
+  if (tag) {
+    query = query.eq("tag", tag);
+  }
+
+  const { data: savedWords, error: swErr } = await query;
 
   if (swErr) throw swErr;
   if (!savedWords || savedWords.length === 0) return [];
@@ -54,6 +62,7 @@ export async function fetchWordsWithProgress(
     phonetic: sw.phonetic,
     definition: sw.definition,
     part_of_speech: sw.part_of_speech,
+    tag: sw.tag ?? undefined,
     progress: progressMap.get(sw.id) || null,
   }));
 }
@@ -141,23 +150,45 @@ export async function saveLearningSession(
   if (error) throw error;
 }
 
-export async function fetchLearningStats(userId: string) {
+export async function fetchLearningStats(userId: string, tag?: string | null) {
+  let wordIds: string[] | null = null;
+
+  if (tag) {
+    const { data: taggedWords, error: twErr } = await supabase
+      .from("saved_words")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("tag", tag);
+
+    if (twErr) throw twErr;
+    wordIds = (taggedWords || []).map((w) => w.id);
+    if (wordIds.length === 0) {
+      return { streak: 0, mastered: 0, due: 0 };
+    }
+  }
+
   // Words mastered (repetitions >= 3 means well-learned)
-  const { count: masteredCount, error: mErr } = await supabase
+  let masteredQuery = supabase
     .from("word_progress")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
     .gte("repetitions", 3);
 
+  if (wordIds) masteredQuery = masteredQuery.in("saved_word_id", wordIds);
+
+  const { count: masteredCount, error: mErr } = await masteredQuery;
   if (mErr) throw mErr;
 
   // Words due for review
-  const { count: dueCount, error: dErr } = await supabase
+  let dueQuery = supabase
     .from("word_progress")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
     .lte("next_review_at", new Date().toISOString());
 
+  if (wordIds) dueQuery = dueQuery.in("saved_word_id", wordIds);
+
+  const { count: dueCount, error: dErr } = await dueQuery;
   if (dErr) throw dErr;
 
   // Streak: count consecutive days with at least one session

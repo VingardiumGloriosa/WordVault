@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -9,9 +9,10 @@ import {
   Platform,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useAuth } from "../../auth/AuthProvider";
 import { useLearnStore } from "../../store/learnStore";
+import { LearnStackParamList } from "../../navigation/LearnStack";
 import { reviewCard } from "../../lib/spacedRepetition";
 import {
   updateWordProgress,
@@ -26,7 +27,16 @@ const SCREEN_WIDTH = Math.min(Dimensions.get("window").width, 480);
 export default function FlashcardsScreen() {
   const { session } = useAuth();
   const navigation = useNavigation();
-  const { words } = useLearnStore();
+  const route = useRoute<RouteProp<LearnStackParamList, "Flashcards">>();
+  const { words, selectedTag, loadWords } = useLearnStore();
+  const routeTag = route.params?.tag;
+
+  // If route tag differs from store tag, reload
+  useEffect(() => {
+    if (routeTag !== undefined && routeTag !== selectedTag && session) {
+      loadWords(session.user.id, routeTag);
+    }
+  }, []);
 
   // Sort: due words first, then by soonest next_review_at
   const sortedWords = useRef(

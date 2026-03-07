@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -7,9 +7,10 @@ import {
   Dimensions,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useAuth } from "../../auth/AuthProvider";
 import { useLearnStore } from "../../store/learnStore";
+import { LearnStackParamList } from "../../navigation/LearnStack";
 import { reviewCard } from "../../lib/spacedRepetition";
 import {
   updateWordProgress,
@@ -61,7 +62,15 @@ function buildTiles(words: SavedWordWithProgress[]): Tile[] {
 export default function MatchGameScreen() {
   const { session } = useAuth();
   const navigation = useNavigation();
-  const { words } = useLearnStore();
+  const route = useRoute<RouteProp<LearnStackParamList, "MatchGame">>();
+  const { words, selectedTag, loadWords } = useLearnStore();
+  const routeTag = route.params?.tag;
+
+  useEffect(() => {
+    if (routeTag !== undefined && routeTag !== selectedTag && session) {
+      loadWords(session.user.id, routeTag);
+    }
+  }, []);
 
   const tiles = useRef(buildTiles(words)).current;
   const wordMap = useRef(

@@ -6,12 +6,14 @@ export async function saveWord({
   phonetic,
   definition,
   partOfSpeech,
+  tag,
 }: {
   userId: string;
   word: string;
   phonetic?: string;
   definition: string;
   partOfSpeech?: string;
+  tag?: string;
 }) {
   const { error } = await supabase.from("saved_words").insert({
     user_id: userId,
@@ -19,6 +21,7 @@ export async function saveWord({
     phonetic,
     definition,
     part_of_speech: partOfSpeech,
+    tag,
   });
 
   if (error) throw error;
@@ -33,6 +36,14 @@ export async function fetchSavedWords(userId: string) {
 
   if (error) throw error;
   return data;
+}
+
+export async function updateWordTag(id: string, tag: string | null) {
+  const { error } = await supabase
+    .from("saved_words")
+    .update({ tag: tag || null })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function deleteSavedWord(id: string) {

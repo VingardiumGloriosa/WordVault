@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useAuth } from "../../auth/AuthProvider";
 import { useLearnStore } from "../../store/learnStore";
+import { LearnStackParamList } from "../../navigation/LearnStack";
 import { reviewCard } from "../../lib/spacedRepetition";
 import {
   updateWordProgress,
@@ -53,7 +54,15 @@ function buildQuestions(words: SavedWordWithProgress[]): Question[] {
 export default function QuizScreen() {
   const { session } = useAuth();
   const navigation = useNavigation();
-  const { words } = useLearnStore();
+  const route = useRoute<RouteProp<LearnStackParamList, "Quiz">>();
+  const { words, selectedTag, loadWords } = useLearnStore();
+  const routeTag = route.params?.tag;
+
+  useEffect(() => {
+    if (routeTag !== undefined && routeTag !== selectedTag && session) {
+      loadWords(session.user.id, routeTag);
+    }
+  }, []);
 
   const questions = useRef(buildQuestions(words)).current;
 

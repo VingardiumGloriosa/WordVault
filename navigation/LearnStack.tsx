@@ -6,9 +6,9 @@ import MatchGameScreen from "../screens/learn/MatchGameScreen";
 
 export type LearnStackParamList = {
   LearnHome: undefined;
-  Flashcards: undefined;
-  Quiz: undefined;
-  MatchGame: undefined;
+  Flashcards: { tag?: string } | undefined;
+  Quiz: { tag?: string } | undefined;
+  MatchGame: { tag?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<LearnStackParamList>();
