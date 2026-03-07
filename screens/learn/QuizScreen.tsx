@@ -64,6 +64,30 @@ export default function QuizScreen() {
     }
   }, []);
 
+  if (words.length < 4) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
+          <View style={styles.centered}>
+            <Text style={styles.summaryTitle}>Not Enough Words</Text>
+            <Text style={styles.screenOrnament}>{ornament}</Text>
+            <Text style={styles.summaryLabel}>
+              Save at least 4 words to take a quiz.
+            </Text>
+            <Button
+              title="Go Back"
+              type="outline"
+              onPress={() => navigation.goBack()}
+              buttonStyle={styles.backButton}
+              titleStyle={styles.backButtonTitle}
+              containerStyle={{ marginTop: 32 }}
+            />
+          </View>
+        </ScreenContainer>
+      </SafeAreaView>
+    );
+  }
+
   const questions = useRef(buildQuestions(words)).current;
 
   const [currentIndex, setCurrentIndex] = useState(0);

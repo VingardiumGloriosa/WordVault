@@ -7,16 +7,16 @@ import {
   SafeAreaView,
   Modal,
   TouchableOpacity,
-  TextInput,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
 import { FlatList } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../auth/AuthProvider";
-import { fetchSavedWords, deleteSavedWord, updateWordTag } from "../lib/savedWords";
+import { fetchSavedWords, deleteSavedWord, updateWordTag, deleteTag } from "../lib/savedWords";
 import GuestPrompt from "../components/GuestPrompt";
 import TagDropdown from "../components/TagDropdown";
+import TagAutocompleteInput from "../components/TagAutocompleteInput";
 import { colors, ornament } from "../theme";
 import ScreenContainer from "../components/ScreenContainer";
 
@@ -53,16 +53,21 @@ export default function SavedScreen() {
   );
 
   const uniqueTags = useMemo(() => {
-    const tags = new Set<string>();
+    const seen = new Map<string, string>();
     for (const w of words) {
-      if (w.tag) tags.add(w.tag);
+      if (w.tag) {
+        const key = w.tag.toLowerCase();
+        if (!seen.has(key)) seen.set(key, key);
+      }
     }
-    return Array.from(tags);
+    return Array.from(seen.values());
   }, [words]);
 
-  const filteredWords = selectedTag
-    ? words.filter((w) => w.tag === selectedTag)
-    : words;
+  const filteredWords = selectedTag === "__untagged__"
+    ? words.filter((w) => !w.tag)
+    : selectedTag
+      ? words.filter((w) => w.tag?.toLowerCase() === selectedTag.toLowerCase())
+      : words;
 
   const handleDelete = async (id: string, word: string) => {
     const doDelete = async () => {
@@ -85,6 +90,42 @@ export default function SavedScreen() {
         { text: "Cancel", style: "cancel" },
         { text: "Remove", style: "destructive", onPress: doDelete },
       ]);
+    }
+  };
+
+  const handleDeleteTag = async (tag: string) => {
+    if (!session) return;
+    const doDelete = async () => {
+      try {
+        await deleteTag(session.user.id, tag);
+        setWords((prev) =>
+          prev.map((w) =>
+            w.tag?.toLowerCase() === tag.toLowerCase()
+              ? { ...w, tag: undefined }
+              : w,
+          ),
+        );
+        if (selectedTag?.toLowerCase() === tag.toLowerCase()) {
+          setSelectedTag(null);
+        }
+      } catch (err) {
+        Alert.alert("Error", err instanceof Error ? err.message : "Failed to delete tag");
+      }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm(`Delete tag "${tag}" from all words?`)) {
+        await doDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Tag",
+        `Remove "${tag}" from all words? The words themselves will be kept.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: doDelete },
+        ],
+      );
     }
   };
 
@@ -131,7 +172,7 @@ export default function SavedScreen() {
       {words.length > 0 && (
         <Text style={styles.count}>
           {selectedTag
-            ? `${filteredWords.length} of ${words.length} words`
+            ? `${filteredWords.length} of ${words.length} words${selectedTag === "__untagged__" ? " (untagged)" : ""}`
             : `${words.length} ${words.length === 1 ? "word" : "words"} saved`}
         </Text>
       )}
@@ -140,6 +181,7 @@ export default function SavedScreen() {
           tags={uniqueTags}
           selectedTag={selectedTag}
           onSelectTag={setSelectedTag}
+          onDeleteTag={handleDeleteTag}
         />
       )}
     </View>
@@ -220,14 +262,14 @@ export default function SavedScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Edit Tag</Text>
             <Text style={styles.modalWord}>{editingWord?.word}</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={editTagText}
-              onChangeText={setEditTagText}
-              placeholder="Tag (leave empty to remove)"
-              placeholderTextColor={colors.ghost}
-              autoFocus
-            />
+            <View style={styles.modalInputWrap}>
+              <TagAutocompleteInput
+                value={editTagText}
+                onChangeText={setEditTagText}
+                existingTags={uniqueTags}
+                placeholder="Tag (leave empty to remove)"
+              />
+            </View>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalCancel}
@@ -429,6 +471,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 12,
     marginBottom: 16,
+  },
+  modalInputWrap: {
+    marginBottom: 16,
+    zIndex: 10,
   },
   modalButtons: {
     flexDirection: "row",

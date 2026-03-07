@@ -13,13 +13,14 @@ type Props = {
   tags: string[];
   selectedTag: string | null;
   onSelectTag: (tag: string | null) => void;
+  onDeleteTag?: (tag: string) => void;
 };
 
-export default function TagDropdown({ tags, selectedTag, onSelectTag }: Props) {
+export default function TagDropdown({ tags, selectedTag, onSelectTag, onDeleteTag }: Props) {
   const [visible, setVisible] = useState(false);
 
   const sorted = [...tags].sort((a, b) => a.localeCompare(b));
-  const options: (string | null)[] = [null, ...sorted];
+  const options: (string | null)[] = [null, "__untagged__", ...sorted];
 
   return (
     <>
@@ -29,7 +30,7 @@ export default function TagDropdown({ tags, selectedTag, onSelectTag }: Props) {
         activeOpacity={0.7}
       >
         <Text style={styles.triggerText}>
-          {selectedTag ?? "All"}
+          {selectedTag === "__untagged__" ? "Untagged" : selectedTag ?? "All"}
         </Text>
         <Text style={styles.triggerArrow}>{"\u25BE"}</Text>
       </TouchableOpacity>
@@ -53,23 +54,37 @@ export default function TagDropdown({ tags, selectedTag, onSelectTag }: Props) {
               renderItem={({ item }) => {
                 const isActive = item === selectedTag;
                 return (
-                  <TouchableOpacity
-                    style={[styles.option, isActive && styles.optionActive]}
-                    onPress={() => {
-                      onSelectTag(item);
-                      setVisible(false);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isActive && styles.optionTextActive,
-                      ]}
+                  <View style={styles.optionRow}>
+                    <TouchableOpacity
+                      style={[styles.option, isActive && styles.optionActive, { flex: 1 }]}
+                      onPress={() => {
+                        onSelectTag(item);
+                        setVisible(false);
+                      }}
+                      activeOpacity={0.7}
                     >
-                      {item ?? "All"}
-                    </Text>
-                  </TouchableOpacity>
+                      <Text
+                        style={[
+                          styles.optionText,
+                          isActive && styles.optionTextActive,
+                        ]}
+                      >
+                        {item === "__untagged__" ? "Untagged" : item ?? "All"}
+                      </Text>
+                    </TouchableOpacity>
+                    {item !== null && item !== "__untagged__" && onDeleteTag && (
+                      <TouchableOpacity
+                        style={styles.deleteBtn}
+                        onPress={() => {
+                          setVisible(false);
+                          onDeleteTag(item);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.deleteBtnText}>{"\u00D7"}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 );
               }}
             />
@@ -143,5 +158,20 @@ const styles = StyleSheet.create({
   },
   optionTextActive: {
     color: colors.ember,
+  },
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deleteBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteBtnText: {
+    color: colors.blood,
+    fontSize: 18,
+    fontWeight: "600",
   },
 });

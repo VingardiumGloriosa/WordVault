@@ -34,10 +34,22 @@ export async function saveWord({
     phonetic,
     definition,
     part_of_speech: partOfSpeech,
-    tag,
+    tag: tag ? tag.toLowerCase() : tag,
   });
 
   if (error) throw error;
+}
+
+export async function checkIfSaved(word: string, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("saved_words")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("word", word)
+    .limit(1);
+
+  if (error) return false;
+  return (data?.length ?? 0) > 0;
 }
 
 export async function fetchSavedWords(userId: string) {
@@ -54,8 +66,39 @@ export async function fetchSavedWords(userId: string) {
 export async function updateWordTag(id: string, tag: string | null) {
   const { error } = await supabase
     .from("saved_words")
-    .update({ tag: tag || null })
+    .update({ tag: tag ? tag.toLowerCase() : null })
     .eq("id", id);
+  if (error) throw error;
+}
+
+export async function fetchUserTags(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("saved_words")
+    .select("tag")
+    .eq("user_id", userId)
+    .not("tag", "is", null);
+
+  if (error) throw error;
+
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const row of data ?? []) {
+    const key = (row.tag as string).toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      tags.push(key);
+    }
+  }
+  return tags;
+}
+
+export async function deleteTag(userId: string, tag: string): Promise<void> {
+  const { error } = await supabase
+    .from("saved_words")
+    .update({ tag: null })
+    .eq("user_id", userId)
+    .ilike("tag", tag);
+
   if (error) throw error;
 }
 

@@ -72,6 +72,30 @@ export default function MatchGameScreen() {
     }
   }, []);
 
+  if (words.length < 2) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
+          <View style={styles.centered}>
+            <Text style={styles.summaryTitle}>Not Enough Words</Text>
+            <Text style={styles.screenOrnament}>{ornament}</Text>
+            <Text style={styles.summaryLabel}>
+              Save at least 2 words to play the match game.
+            </Text>
+            <Button
+              title="Go Back"
+              type="outline"
+              onPress={() => navigation.goBack()}
+              buttonStyle={styles.backButton}
+              titleStyle={styles.backButtonTitle}
+              containerStyle={{ marginTop: 32 }}
+            />
+          </View>
+        </ScreenContainer>
+      </SafeAreaView>
+    );
+  }
+
   const tiles = useRef(buildTiles(words)).current;
   const wordMap = useRef(
     new Map(words.map((w) => [w.id, w])),

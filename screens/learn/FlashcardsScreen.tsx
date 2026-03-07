@@ -38,6 +38,30 @@ export default function FlashcardsScreen() {
     }
   }, []);
 
+  if (words.length < 1) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
+          <View style={styles.centered}>
+            <Text style={styles.summaryTitle}>Not Enough Words</Text>
+            <Text style={styles.screenOrnament}>{ornament}</Text>
+            <Text style={styles.summaryLabel}>
+              Save at least 1 word to use flashcards.
+            </Text>
+            <Button
+              title="Go Back"
+              type="outline"
+              onPress={() => navigation.goBack()}
+              buttonStyle={styles.backButton}
+              titleStyle={styles.backButtonTitle}
+              containerStyle={{ marginTop: 32 }}
+            />
+          </View>
+        </ScreenContainer>
+      </SafeAreaView>
+    );
+  }
+
   // Sort: due words first, then by soonest next_review_at
   const sortedWords = useRef(
     [...words].sort((a, b) => {

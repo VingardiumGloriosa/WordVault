@@ -6,6 +6,7 @@ const API_URL = process.env.EXPO_PUBLIC_DICTIONARY_API_URL;
 export type DictionaryEntry = {
   word: string;
   phonetic?: string;
+  phonetics?: { text?: string; audio?: string }[];
   meanings: {
     partOfSpeech: string;
     definitions: {
@@ -58,15 +59,28 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
   clearResult: () => set({ result: null, error: null }),
 
   saveCurrentWord: async (entry, userId, tag?) => {
-    const meaning = entry.meanings[0];
-    const definition = meaning.definitions[0];
+    if (!entry.meanings || entry.meanings.length === 0) {
+      throw new Error("No definitions available to save");
+    }
+
+    const MAX_LENGTH = 2000;
+    const parts = entry.meanings.map((m) => {
+      const defs = m.definitions
+        .map((d, i) => `${i + 1}. ${d.definition}`)
+        .join("; ");
+      return `(${m.partOfSpeech}) ${defs}`;
+    });
+    let definition = parts.join(" | ");
+    if (definition.length > MAX_LENGTH) {
+      definition = definition.slice(0, MAX_LENGTH - 3) + "...";
+    }
 
     await saveWord({
       userId,
       word: entry.word,
       phonetic: entry.phonetic,
-      definition: definition.definition,
-      partOfSpeech: meaning.partOfSpeech,
+      definition,
+      partOfSpeech: entry.meanings[0].partOfSpeech,
       tag: tag?.trim() || undefined,
     });
   },

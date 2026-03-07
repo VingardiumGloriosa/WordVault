@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { StyleSheet, View, Alert, Image } from "react-native";
+import { StyleSheet, View, Image } from "react-native";
 import { Button, Text } from "@rneui/themed";
 import * as ImagePicker from "expo-image-picker";
 import { colors } from "../theme";
@@ -24,21 +24,13 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
     try {
       const { data, error } = await supabase.storage
         .from("avatars")
-        .download(path);
-
-      if (error) {
-        throw error;
+        .createSignedUrl(path, 3600);
+      if (error) throw error;
+      if (data?.signedUrl) {
+        setAvatarUrl(data.signedUrl);
       }
-
-      const fr = new FileReader();
-      fr.readAsDataURL(data);
-      fr.onload = () => {
-        setAvatarUrl(fr.result as string);
-      };
-    } catch (error) {
-      if (error instanceof Error) {
-        Alert.alert("Error", "Could not download avatar image.");
-      }
+    } catch {
+      // Silently fail — placeholder avatar shown
     }
   }
 

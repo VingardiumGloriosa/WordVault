@@ -1,12 +1,15 @@
-import { useState } from "react";
-import { View, StyleSheet, ScrollView, SafeAreaView } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from "react-native";
 import { Input, Text, Button } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
+import { Audio } from "expo-av";
 import { useDictionaryStore } from "../store/dictionaryStore";
 import { useAuth } from "../auth/AuthProvider";
+import { checkIfSaved, fetchUserTags } from "../lib/savedWords";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, ornament } from "../theme";
 import ScreenContainer from "../components/ScreenContainer";
+import TagAutocompleteInput from "../components/TagAutocompleteInput";
 
 export default function SearchScreen() {
   const { search, result, loading, error, saveCurrentWord, clearResult } =
@@ -16,8 +19,47 @@ export default function SearchScreen() {
   const [searchText, setSearchText] = useState("");
   const [tagText, setTagText] = useState("");
   const [saveMessage, setSaveMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [alreadySaved, setAlreadySaved] = useState(false);
+  const [existingTags, setExistingTags] = useState<string[]>([]);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   const entry = result?.[0];
+
+  const audioUrl = entry?.phonetics?.find((p) => p.audio)?.audio || null;
+
+  useEffect(() => {
+    if (session) {
+      fetchUserTags(session.user.id).then(setExistingTags).catch(() => {});
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (entry && session) {
+      checkIfSaved(entry.word, session.user.id).then(setAlreadySaved);
+    } else {
+      setAlreadySaved(false);
+    }
+  }, [entry?.word, session]);
+
+  useEffect(() => {
+    return () => {
+      soundRef.current?.unloadAsync();
+    };
+  }, []);
+
+  const playAudio = async () => {
+    if (!audioUrl) return;
+    try {
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+      }
+      const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
+      soundRef.current = sound;
+      await sound.playAsync();
+    } catch {
+      // Silently fail if audio can't play
+    }
+  };
 
   const handleSave = async () => {
     if (!session || !entry) return;
@@ -25,6 +67,8 @@ export default function SearchScreen() {
       await saveCurrentWord(entry, session.user.id, tagText);
       setSaveMessage({ text: `"${entry.word}" added to your collection`, type: "success" });
       setTagText("");
+      setAlreadySaved(true);
+      fetchUserTags(session.user.id).then(setExistingTags).catch(() => {});
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err: any) {
       setSaveMessage({ text: err?.message ?? "Something went wrong", type: "error" });
@@ -64,9 +108,16 @@ export default function SearchScreen() {
           <View style={styles.resultCard}>
             <View style={styles.wordHeader}>
               <Text h2 h2Style={styles.word}>{entry.word}</Text>
-              {entry.phonetic && (
-                <Text style={styles.phonetic}>{entry.phonetic}</Text>
-              )}
+              <View style={styles.phoneticRow}>
+                {entry.phonetic && (
+                  <Text style={styles.phonetic}>{entry.phonetic}</Text>
+                )}
+                {audioUrl && (
+                  <TouchableOpacity onPress={playAudio} style={styles.audioButton}>
+                    <Ionicons name="volume-medium" size={20} color={colors.ember} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
 
             <View style={styles.dividerLine} />
@@ -101,25 +152,29 @@ export default function SearchScreen() {
                     {saveMessage.text}
                   </Text>
                 )}
-                <View style={styles.tagContainer}>
-                  <Input
-                    placeholder='tag (optional) e.g. "SAT prep"'
-                    placeholderTextColor={colors.ghost}
-                    value={tagText}
-                    onChangeText={setTagText}
-                    containerStyle={styles.tagInput}
-                    inputStyle={styles.inputText}
-                    inputContainerStyle={styles.tagInputInner}
-                    leftIcon={<Ionicons name="pricetag-outline" size={16} color={colors.amberMuted} />}
-                  />
-                </View>
-                <Button
-                  title="Save to Collection"
-                  onPress={handleSave}
-                  buttonStyle={styles.saveButton}
-                  titleStyle={styles.saveButtonText}
-                  containerStyle={styles.saveContainer}
-                />
+                {alreadySaved ? (
+                  <View style={styles.savedBadge}>
+                    <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                    <Text style={styles.savedBadgeText}>Already in Collection</Text>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.tagContainer}>
+                      <TagAutocompleteInput
+                        value={tagText}
+                        onChangeText={setTagText}
+                        existingTags={existingTags}
+                      />
+                    </View>
+                    <Button
+                      title="Save to Collection"
+                      onPress={handleSave}
+                      buttonStyle={styles.saveButton}
+                      titleStyle={styles.saveButtonText}
+                      containerStyle={styles.saveContainer}
+                    />
+                  </>
+                )}
                 </>
               ) : (
                 <Button
@@ -220,6 +275,32 @@ const styles = StyleSheet.create({
   wordHeader: {
     marginBottom: 4,
   },
+  phoneticRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
+  },
+  audioButton: {
+    padding: 4,
+  },
+  savedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.success,
+    backgroundColor: "#1a2a15",
+  },
+  savedBadgeText: {
+    color: colors.success,
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 1,
+  },
   word: {
     color: colors.bone,
     fontWeight: "300",
@@ -229,7 +310,6 @@ const styles = StyleSheet.create({
     color: colors.ember,
     fontSize: 15,
     fontStyle: "italic",
-    marginTop: 4,
     letterSpacing: 1,
   },
   dividerLine: {
@@ -294,13 +374,6 @@ const styles = StyleSheet.create({
   },
   tagContainer: {
     marginBottom: 12,
-  },
-  tagInput: {
-    marginBottom: -8,
-  },
-  tagInputInner: {
-    borderBottomColor: colors.charcoal,
-    borderBottomWidth: 1,
   },
   saveContainer: {},
   saveButton: {
