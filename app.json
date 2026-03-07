@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "dic_project",
-    "slug": "dic_project",
+    "name": "Word Vault",
+    "slug": "Word_Vault",
     "version": "1.0.0",
     "scheme": "wordvault",
     "orientation": "portrait",
@@ -35,9 +35,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-secure-store",
-      "expo-web-browser"
-    ]
+    "plugins": ["expo-secure-store", "expo-web-browser"]
   }
 }
