@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { StyleSheet, View, Alert, ScrollView, SafeAreaView } from "react-native";
+import { StyleSheet, View, Alert, ScrollView, SafeAreaView, Platform } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { Session } from "@supabase/supabase-js";
 import Avatar from "./Avatar";
@@ -142,16 +142,20 @@ export default function Account({ session }: { session: Session }) {
           <Button
             type="clear"
             title="sign out"
-            onPress={() =>
-              Alert.alert(
-                "Sign Out",
-                "Are you sure you want to sign out?",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "Sign Out", style: "destructive", onPress: () => signOut() },
-                ],
-              )
-            }
+            onPress={() => {
+              if (Platform.OS === "web") {
+                if (window.confirm("Are you sure you want to sign out?")) signOut();
+              } else {
+                Alert.alert(
+                  "Sign Out",
+                  "Are you sure you want to sign out?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Sign Out", style: "destructive", onPress: () => signOut() },
+                  ],
+                );
+              }
+            }}
             titleStyle={styles.signOutText}
           />
         </View>
