@@ -33,11 +33,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png",
-      "name": "Word Vault",
-      "shortName": "Word Vault",
-      "themeColor": "#6b1d3a",
-      "backgroundColor": "#08070a"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": ["expo-secure-store", "expo-web-browser"]
   }
