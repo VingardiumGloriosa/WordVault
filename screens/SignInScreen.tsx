@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { View, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Input, Button, Text } from "@rneui/themed";
 import { useAuth } from "../auth/AuthProvider";
 import { Ionicons } from "@expo/vector-icons";
@@ -159,12 +158,7 @@ export default function SignInScreen() {
       signup: "A confirmation link has been sent to",
     };
     return (
-      <LinearGradient
-        colors={[colors.void, colors.abyss, colors.burgundy + "30", colors.void]}
-        locations={[0, 0.3, 0.7, 1]}
-        style={styles.container}
-      >
-        <ScreenContainer style={{ justifyContent: "center", padding: 28 }}>
+      <ScreenContainer style={{ justifyContent: "center", padding: 28 }}>
         <Text style={styles.ornament}>{ornament}</Text>
         <Text h3 h3Style={styles.confirmTitle}>Check Your Email</Text>
         <Text style={styles.confirmBody}>
@@ -191,20 +185,14 @@ export default function SignInScreen() {
           containerStyle={{ marginTop: 12 }}
           titleStyle={styles.toggleText}
         />
-        </ScreenContainer>
-      </LinearGradient>
+      </ScreenContainer>
     );
   }
 
   // --- Reset Password screen ---
   if (mode === "resetPassword") {
     return (
-      <LinearGradient
-        colors={[colors.void, colors.abyss, colors.burgundy + "25", colors.void]}
-        locations={[0, 0.4, 0.7, 1]}
-        style={styles.flex}
-      >
-        <ScreenContainer>
+      <ScreenContainer>
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -276,20 +264,14 @@ export default function SignInScreen() {
             titleStyle={styles.toggleText}
           />
         </KeyboardAvoidingView>
-        </ScreenContainer>
-      </LinearGradient>
+      </ScreenContainer>
     );
   }
 
   // --- Magic Link screen (default) ---
   if (mode === "magic") {
     return (
-      <LinearGradient
-        colors={[colors.void, colors.abyss, colors.burgundy + "25", colors.void]}
-        locations={[0, 0.4, 0.7, 1]}
-        style={styles.flex}
-      >
-        <ScreenContainer>
+      <ScreenContainer>
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -338,8 +320,7 @@ export default function SignInScreen() {
             titleStyle={styles.toggleText}
           />
         </KeyboardAvoidingView>
-        </ScreenContainer>
-      </LinearGradient>
+      </ScreenContainer>
     );
   }
 
@@ -348,12 +329,7 @@ export default function SignInScreen() {
   const isValid = emailValid && passwordValid;
 
   return (
-    <LinearGradient
-      colors={[colors.void, colors.abyss, colors.burgundy + "25", colors.void]}
-      locations={[0, 0.4, 0.7, 1]}
-      style={styles.flex}
-    >
-      <ScreenContainer>
+    <ScreenContainer>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -451,15 +427,11 @@ export default function SignInScreen() {
           titleStyle={styles.toggleText}
         />
       </KeyboardAvoidingView>
-      </ScreenContainer>
-    </LinearGradient>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     justifyContent: "center",
