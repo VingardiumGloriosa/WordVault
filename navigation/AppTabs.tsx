@@ -18,7 +18,7 @@ export default function AppTabs() {
           backgroundColor: colors.obsidian,
           borderTopColor: colors.charcoal,
           borderTopWidth: 1,
-          paddingBottom: (Platform.OS === "web" ? 28 : 25),
+          paddingBottom: (Platform.OS === "web" ? 28 : 8),
           paddingTop: 6,
         },
         tabBarActiveTintColor: colors.ember,
