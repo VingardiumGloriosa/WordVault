@@ -18,7 +18,6 @@ export default function AppTabs() {
           backgroundColor: colors.obsidian,
           borderTopColor: colors.charcoal,
           borderTopWidth: 1,
-          height: (Platform.OS === "web" ? 80 : 85),
           paddingBottom: (Platform.OS === "web" ? 28 : 25),
           paddingTop: 6,
         },
