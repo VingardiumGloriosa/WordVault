@@ -49,7 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .then(({ data }) => {
         setSession(data.session);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn("Failed to get session:", err);
         setSession(null);
       })
       .finally(() => {

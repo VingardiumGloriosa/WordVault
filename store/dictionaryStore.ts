@@ -3,6 +3,9 @@ import { saveWord } from "../lib/savedWords";
 
 const API_URL = process.env.EXPO_PUBLIC_DICTIONARY_API_URL;
 
+const searchCache = new Map<string, DictionaryEntry[]>();
+const CACHE_MAX = 50;
+
 export type DictionaryEntry = {
   word: string;
   phonetic?: string;
@@ -34,20 +37,42 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
   search: async (word) => {
     if (!word.trim()) return;
 
+    const key = word.trim().toLowerCase();
+    const cached = searchCache.get(key);
+    if (cached) {
+      set({ result: cached, loading: false, error: null });
+      return;
+    }
+
     set({ loading: true, error: null });
 
     try {
-      const res = await fetch(`${API_URL}/${word.toLowerCase()}`);
+      const res = await fetch(`${API_URL}/${encodeURIComponent(key)}`);
 
       if (!res.ok) {
-        throw new Error("Word not found");
+        throw new Error(
+          res.status === 404
+            ? "Word not found"
+            : `Lookup failed (status ${res.status})`,
+        );
       }
 
       const data = await res.json();
 
+      if (searchCache.size >= CACHE_MAX) {
+        const firstKey = searchCache.keys().next().value;
+        if (firstKey !== undefined) searchCache.delete(firstKey);
+      }
+      searchCache.set(key, data);
+
       set({ result: data, loading: false });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
+      const message =
+        err instanceof TypeError
+          ? "Network error — check your connection"
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong";
       set({
         error: message,
         result: null,

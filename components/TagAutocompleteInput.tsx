@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -24,6 +24,13 @@ export default function TagAutocompleteInput({
   placeholder = 'tag (optional) e.g. "SAT prep"',
 }: Props) {
   const [focused, setFocused] = useState(false);
+  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    };
+  }, []);
 
   const suggestions =
     focused && value.length > 0
@@ -50,7 +57,10 @@ export default function TagAutocompleteInput({
           placeholder={placeholder}
           placeholderTextColor={colors.ghost}
           onFocus={() => setFocused(true)}
-          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          onBlur={() => {
+            if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+            blurTimerRef.current = setTimeout(() => setFocused(false), 150);
+          }}
         />
       </View>
       {suggestions.length > 0 && (

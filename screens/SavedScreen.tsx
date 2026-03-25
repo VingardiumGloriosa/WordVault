@@ -1,19 +1,18 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import {
   View,
-  Alert,
-  Platform,
   StyleSheet,
   SafeAreaView,
   Modal,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
 import { FlatList } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../auth/AuthProvider";
-import { fetchSavedWords, deleteSavedWord, updateWordTag, deleteTag } from "../lib/savedWords";
+import { fetchSavedWords, deleteSavedWord, updateWordTag, deleteTag, saveWord } from "../lib/savedWords";
 import GuestPrompt from "../components/GuestPrompt";
 import TagDropdown from "../components/TagDropdown";
 import TagAutocompleteInput from "../components/TagAutocompleteInput";
@@ -32,22 +31,45 @@ interface SavedWord {
 export default function SavedScreen() {
   const { session } = useAuth();
   const [words, setWords] = useState<SavedWord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [editingWord, setEditingWord] = useState<SavedWord | null>(null);
   const [editTagText, setEditTagText] = useState("");
+  const [undoItem, setUndoItem] = useState<SavedWord | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [confirmDeleteTag, setConfirmDeleteTag] = useState<string | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  const showToast = (message: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(message);
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
+  };
 
   useFocusEffect(
     useCallback(() => {
       if (session) {
         setError(null);
+        setLoading(true);
         fetchSavedWords(session.user.id)
           .then(setWords)
           .catch((err) => {
             setError(
               err instanceof Error ? err.message : "Failed to load saved words",
             );
-          });
+          })
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
     }, [session]),
   );
@@ -69,63 +91,65 @@ export default function SavedScreen() {
       ? words.filter((w) => w.tag?.toLowerCase() === selectedTag.toLowerCase())
       : words;
 
-  const handleDelete = async (id: string, word: string) => {
-    const doDelete = async () => {
-      try {
-        await deleteSavedWord(id);
-        setWords((prev) => prev.filter((w) => w.id !== id));
-      } catch (err) {
-        if (err instanceof Error) {
-          Alert.alert("Error", err.message);
-        }
+  const handleDelete = async (id: string) => {
+    try {
+      const deleted = words.find((w) => w.id === id);
+      await deleteSavedWord(id);
+      setWords((prev) => prev.filter((w) => w.id !== id));
+      if (deleted) {
+        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+        setUndoItem(deleted);
+        undoTimerRef.current = setTimeout(() => setUndoItem(null), 5000);
       }
-    };
-
-    if (Platform.OS === "web") {
-      if (window.confirm(`Remove "${word}" from your collection?`)) {
-        await doDelete();
-      }
-    } else {
-      Alert.alert("Remove Word", `Remove "${word}" from your collection?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Remove", style: "destructive", onPress: doDelete },
-      ]);
+    } catch (err) {
+      if (err instanceof Error) showToast(err.message);
     }
   };
 
-  const handleDeleteTag = async (tag: string) => {
-    if (!session) return;
-    const doDelete = async () => {
-      try {
-        await deleteTag(session.user.id, tag);
-        setWords((prev) =>
-          prev.map((w) =>
-            w.tag?.toLowerCase() === tag.toLowerCase()
-              ? { ...w, tag: undefined }
-              : w,
-          ),
-        );
-        if (selectedTag?.toLowerCase() === tag.toLowerCase()) {
-          setSelectedTag(null);
-        }
-      } catch (err) {
-        Alert.alert("Error", err instanceof Error ? err.message : "Failed to delete tag");
-      }
-    };
+  const handleUndo = async () => {
+    if (!undoItem || !session) return;
+    try {
+      await saveWord({
+        userId: session.user.id,
+        word: undoItem.word,
+        phonetic: undoItem.phonetic,
+        definition: undoItem.definition,
+        partOfSpeech: undoItem.part_of_speech,
+        tag: undoItem.tag,
+      });
+      // Refresh list to get the new ID
+      const refreshed = await fetchSavedWords(session.user.id);
+      setWords(refreshed);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to restore word");
+    } finally {
+      setUndoItem(null);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    }
+  };
 
-    if (Platform.OS === "web") {
-      if (window.confirm(`Delete tag "${tag}" from all words?`)) {
-        await doDelete();
-      }
-    } else {
-      Alert.alert(
-        "Delete Tag",
-        `Remove "${tag}" from all words? The words themselves will be kept.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Delete", style: "destructive", onPress: doDelete },
-        ],
+  const handleDeleteTag = (tag: string) => {
+    setConfirmDeleteTag(tag);
+  };
+
+  const confirmDeleteTagAction = async () => {
+    if (!session || !confirmDeleteTag) return;
+    const tag = confirmDeleteTag;
+    setConfirmDeleteTag(null);
+    try {
+      await deleteTag(session.user.id, tag);
+      setWords((prev) =>
+        prev.map((w) =>
+          w.tag?.toLowerCase() === tag.toLowerCase()
+            ? { ...w, tag: undefined }
+            : w,
+        ),
       );
+      if (selectedTag?.toLowerCase() === tag.toLowerCase()) {
+        setSelectedTag(null);
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to delete tag");
     }
   };
 
@@ -141,7 +165,7 @@ export default function SavedScreen() {
       );
       setEditingWord(null);
     } catch (err) {
-      Alert.alert("Error", err instanceof Error ? err.message : "Failed to update tag");
+      showToast(err instanceof Error ? err.message : "Failed to update tag");
     }
   };
 
@@ -158,7 +182,7 @@ export default function SavedScreen() {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.swipeRemove}
-        onPress={() => handleDelete(item.id, item.word)}
+        onPress={() => handleDelete(item.id)}
       >
         <Text style={styles.swipeActionText}>Remove</Text>
       </TouchableOpacity>
@@ -197,6 +221,19 @@ export default function SavedScreen() {
           title="Your Collection Awaits"
           message={"Sign in to save words and\nbuild your personal lexicon."}
         />
+        </ScreenContainer>
+      </SafeAreaView>
+    );
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScreenContainer>
+        {renderHeader()}
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.ember} size="small" />
+        </View>
         </ScreenContainer>
       </SafeAreaView>
     );
@@ -287,6 +324,51 @@ export default function SavedScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={confirmDeleteTag !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmDeleteTag(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Delete Tag</Text>
+            <Text style={styles.modalWord}>
+              Remove "{confirmDeleteTag}" from all words?{"\n"}The words themselves will be kept.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setConfirmDeleteTag(null)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalDelete}
+                onPress={confirmDeleteTagAction}
+              >
+                <Text style={styles.modalSaveText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {undoItem && (
+        <View style={styles.undoBanner}>
+          <Text style={styles.undoText}>"{undoItem.word}" removed</Text>
+          <TouchableOpacity onPress={handleUndo}>
+            <Text style={styles.undoAction}>UNDO</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {toast && !undoItem && (
+        <View style={styles.toastBanner}>
+          <Text style={styles.toastText}>{toast}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -435,7 +517,7 @@ const styles = StyleSheet.create({
   // Edit tag modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -501,5 +583,55 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     letterSpacing: 1,
+  },
+  modalDelete: {
+    backgroundColor: colors.blood,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  undoBanner: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: colors.smoke,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.charcoal,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  undoText: {
+    color: colors.parchment,
+    fontSize: 13,
+    flex: 1,
+  },
+  undoAction: {
+    color: colors.ember,
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 2,
+    marginLeft: 16,
+  },
+  toastBanner: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: colors.errorBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.blood,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  toastText: {
+    color: colors.bloodBright,
+    fontSize: 13,
+    textAlign: "center",
   },
 });

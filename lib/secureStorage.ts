@@ -8,6 +8,9 @@ function chunkedKey(key: string, index: number) {
 }
 
 async function nativeSetItem(key: string, value: string): Promise<void> {
+  // Clean up any existing chunks before writing
+  await cleanupChunks(key);
+
   if (value.length <= CHUNK_SIZE) {
     await SecureStore.setItemAsync(key, value);
     return;
@@ -19,6 +22,22 @@ async function nativeSetItem(key: string, value: string): Promise<void> {
       chunkedKey(key, i),
       value.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
     );
+  }
+}
+
+async function cleanupChunks(key: string): Promise<void> {
+  try {
+    const raw = await SecureStore.getItemAsync(key);
+    if (raw !== null && raw.startsWith("__chunked__:")) {
+      const count = parseInt(raw.split(":")[1], 10);
+      if (!isNaN(count)) {
+        for (let i = 0; i < count; i++) {
+          await SecureStore.deleteItemAsync(chunkedKey(key, i));
+        }
+      }
+    }
+  } catch {
+    // Best-effort cleanup
   }
 }
 
@@ -47,16 +66,19 @@ async function nativeRemoveItem(key: string): Promise<void> {
   await SecureStore.deleteItemAsync(key);
 }
 
+// Use sessionStorage on web — tokens are cleared when the tab closes,
+// reducing exposure compared to localStorage (which persists indefinitely
+// and is accessible to any script on the page via XSS).
 const webStorage = {
   getItem(key: string) {
-    if (typeof localStorage === "undefined") return null;
-    return localStorage.getItem(key);
+    if (typeof sessionStorage === "undefined") return null;
+    return sessionStorage.getItem(key);
   },
   setItem(key: string, value: string) {
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
   },
   removeItem(key: string) {
-    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
   },
 };
 

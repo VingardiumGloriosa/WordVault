@@ -370,11 +370,11 @@ const styles = StyleSheet.create({
   },
   tileMatched: {
     borderColor: colors.success,
-    backgroundColor: "#1a2a15",
+    backgroundColor: colors.successBg,
   },
   tileWrong: {
     borderColor: colors.blood,
-    backgroundColor: "#2a1515",
+    backgroundColor: colors.errorBg,
   },
   tileWordText: {
     color: colors.bone,

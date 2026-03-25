@@ -63,9 +63,14 @@ export default function FlashcardsScreen() {
   }
 
   // Sort: due words first, then by soonest next_review_at
-  const sortedWords = useRef(
-    [...words].sort((a, b) => {
-      const now = Date.now();
+  // Re-sort when words change (e.g. new words added from another screen)
+  const sortedWords = useRef<SavedWordWithProgress[]>([]);
+  const lastWordIds = useRef("");
+  const currentIds = words.map((w) => w.id).join(",");
+  if (currentIds !== lastWordIds.current) {
+    lastWordIds.current = currentIds;
+    const now = Date.now();
+    sortedWords.current = [...words].sort((a, b) => {
       const aTime = a.progress
         ? new Date(a.progress.next_review_at).getTime()
         : 0;
@@ -76,8 +81,8 @@ export default function FlashcardsScreen() {
       const bDue = bTime <= now ? 0 : 1;
       if (aDue !== bDue) return aDue - bDue;
       return aTime - bTime;
-    }),
-  ).current;
+    });
+  }
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -103,7 +108,7 @@ export default function FlashcardsScreen() {
 
   const handleGrade = useCallback(
     async (quality: number) => {
-      const word = sortedWords[currentIndex];
+      const word = sortedWords.current[currentIndex];
       if (!session || !word.progress) return;
 
       const correct = quality >= 3;
@@ -129,7 +134,7 @@ export default function FlashcardsScreen() {
         // Non-blocking — progress still shown locally
       }
 
-      if (currentIndex + 1 >= sortedWords.length) {
+      if (currentIndex + 1 >= sortedWords.current.length) {
         // End of deck
         setDone(true);
         const finalCorrect = correct ? correctCount + 1 : correctCount;
@@ -137,7 +142,7 @@ export default function FlashcardsScreen() {
           await saveLearningSession(
             session.user.id,
             "flashcard",
-            sortedWords.length,
+            sortedWords.current.length,
             finalCorrect,
           );
         } catch {
@@ -148,7 +153,7 @@ export default function FlashcardsScreen() {
         setCurrentIndex((i) => i + 1);
       }
     },
-    [currentIndex, session, sortedWords, correctCount, resetFlip],
+    [currentIndex, session, correctCount, resetFlip],
   );
 
   const frontInterpolate = flipAnim.interpolate({
@@ -161,7 +166,7 @@ export default function FlashcardsScreen() {
   });
 
   if (done) {
-    const total = sortedWords.length;
+    const total = sortedWords.current.length;
     const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
     return (
@@ -188,7 +193,7 @@ export default function FlashcardsScreen() {
     );
   }
 
-  const currentWord = sortedWords[currentIndex];
+  const currentWord = sortedWords.current[currentIndex];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -198,7 +203,7 @@ export default function FlashcardsScreen() {
           <Text style={styles.backArrow}>{"\u2190"}</Text>
         </TouchableOpacity>
         <Text style={styles.progress}>
-          {currentIndex + 1} / {sortedWords.length}
+          {currentIndex + 1} / {sortedWords.current.length}
         </Text>
       </View>
 

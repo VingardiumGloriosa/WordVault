@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from "react-native";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { View, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { Input, Text, Button } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { Audio } from "expo-av";
@@ -22,6 +22,19 @@ export default function SearchScreen() {
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [existingTags, setExistingTags] = useState<string[]>([]);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showSaveMessage = useCallback((msg: { text: string; type: "success" | "error" }) => {
+    if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
+    setSaveMessage(msg);
+    saveMessageTimerRef.current = setTimeout(() => setSaveMessage(null), 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
+    };
+  }, []);
 
   const entry = result?.[0];
 
@@ -29,7 +42,9 @@ export default function SearchScreen() {
 
   useEffect(() => {
     if (session) {
-      fetchUserTags(session.user.id).then(setExistingTags).catch(() => {});
+      fetchUserTags(session.user.id).then(setExistingTags).catch((err) => {
+        console.warn("Failed to load tags:", err);
+      });
     }
   }, [session]);
 
@@ -65,19 +80,20 @@ export default function SearchScreen() {
     if (!session || !entry) return;
     try {
       await saveCurrentWord(entry, session.user.id, tagText);
-      setSaveMessage({ text: `"${entry.word}" added to your collection`, type: "success" });
+      showSaveMessage({ text: `"${entry.word}" added to your collection`, type: "success" });
       setTagText("");
       setAlreadySaved(true);
-      fetchUserTags(session.user.id).then(setExistingTags).catch(() => {});
-      setTimeout(() => setSaveMessage(null), 3000);
+      fetchUserTags(session.user.id).then(setExistingTags).catch((err) => {
+        console.warn("Failed to refresh tags:", err);
+      });
     } catch (err: any) {
-      setSaveMessage({ text: err?.message ?? "Something went wrong", type: "error" });
-      setTimeout(() => setSaveMessage(null), 3000);
+      showSaveMessage({ text: err?.message ?? "Something went wrong", type: "error" });
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <ScreenContainer>
         <Text style={styles.screenTitle}>Search</Text>
@@ -200,6 +216,7 @@ export default function SearchScreen() {
         )}
       </ScreenContainer>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -293,7 +310,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.success,
-    backgroundColor: "#1a2a15",
+    backgroundColor: colors.successBg,
   },
   savedBadgeText: {
     color: colors.success,

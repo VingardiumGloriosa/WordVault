@@ -14,10 +14,16 @@ interface Props {
 export default function Avatar({ url, size = 150, onUpload }: Props) {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const avatarSize = { height: size, width: size };
 
   useEffect(() => {
-    if (url) downloadImage(url);
+    if (!url) return;
+    downloadImage(url);
+    // Refresh signed URL before it expires (every 50 minutes)
+    const interval = setInterval(() => downloadImage(url), 50 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [url]);
 
   async function downloadImage(path: string) {
@@ -37,6 +43,8 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
   async function uploadAvatar() {
     try {
       setUploading(true);
+      setError(null);
+      setSuccess(false);
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -56,6 +64,21 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
         throw new Error("No image uri!");
       }
 
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+      if (image.fileSize && image.fileSize > MAX_FILE_SIZE) {
+        throw new Error("Image must be under 5 MB.");
+      }
+
+      const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+      const ALLOWED_EXTS = ["jpg", "jpeg", "png", "webp"];
+      const ext = image.uri.split(".").pop()?.toLowerCase();
+      if (
+        (image.mimeType && !ALLOWED_TYPES.includes(image.mimeType)) ||
+        (ext && !ALLOWED_EXTS.includes(ext))
+      ) {
+        throw new Error("Only JPEG, PNG, and WebP images are supported.");
+      }
+
       const arraybuffer = await fetch(image.uri).then((res) =>
         res.arrayBuffer(),
       );
@@ -73,11 +96,10 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
       }
 
       onUpload(data.path);
-    } catch (error) {
-      if (error instanceof Error) {
-        Alert.alert(error.message);
-      } else {
-        throw error;
+      setSuccess(true);
+    } catch (e) {
+      if (e instanceof Error) {
+        setError(e.message);
       }
     } finally {
       setUploading(false);
@@ -108,6 +130,8 @@ export default function Avatar({ url, size = 150, onUpload }: Props) {
         buttonStyle={styles.uploadButtonInner}
         titleStyle={styles.uploadButtonText}
       />
+      {error && <Text style={styles.errorText}>{error}</Text>}
+      {success && <Text style={styles.successText}>Avatar updated</Text>}
     </View>
   );
 }
@@ -155,5 +179,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     textTransform: "uppercase",
+  },
+  errorText: {
+    color: colors.bloodBright,
+    fontSize: 12,
+    marginTop: 10,
+    textAlign: "center",
+  },
+  successText: {
+    color: colors.success,
+    fontSize: 12,
+    marginTop: 10,
+    textAlign: "center",
+    letterSpacing: 1,
   },
 });

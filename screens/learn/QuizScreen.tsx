@@ -38,11 +38,17 @@ function buildQuestions(words: SavedWordWithProgress[]): Question[] {
   const pool = shuffle(words).slice(0, 10);
 
   return pool.map((w) => {
-    const distractors = shuffle(
-      words.filter((o) => o.id !== w.id),
-    )
-      .slice(0, 3)
-      .map((o) => o.definition);
+    const others = shuffle(words.filter((o) => o.id !== w.id));
+    // Use unique definitions as distractors, avoiding duplicates of the correct answer
+    const seen = new Set([w.definition]);
+    const distractors: string[] = [];
+    for (const o of others) {
+      if (distractors.length >= 3) break;
+      if (!seen.has(o.definition)) {
+        seen.add(o.definition);
+        distractors.push(o.definition);
+      }
+    }
 
     const options = shuffle([w.definition, ...distractors]);
     const correctIndex = options.indexOf(w.definition);
@@ -280,11 +286,11 @@ const styles = StyleSheet.create({
   },
   optionCorrect: {
     borderColor: colors.success,
-    backgroundColor: "#1a2a15",
+    backgroundColor: colors.successBg,
   },
   optionWrong: {
     borderColor: colors.blood,
-    backgroundColor: "#2a1515",
+    backgroundColor: colors.errorBg,
   },
   optionText: {
     color: colors.parchment,

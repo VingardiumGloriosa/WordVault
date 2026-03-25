@@ -26,6 +26,11 @@ export const colors = {
   blood: "#9b2c2c",
   bloodBright: "#c53030",
   success: "#5a7a4a",
+
+  // Semantic backgrounds
+  successBg: "#1a2a15",
+  errorBg: "#2a1515",
+  overlay: "rgba(0,0,0,0.6)",
 };
 
 export const ornament = "\u2022 \u2726 \u2022";

@@ -102,32 +102,16 @@ export async function updateWordProgress(
   result: ReviewResult,
   correct: boolean,
 ): Promise<void> {
-  const updateField = correct
-    ? "times_correct"
-    : "times_incorrect";
-
-  // First get current value for increment
-  const { data: current, error: fetchErr } = await supabase
-    .from("word_progress")
-    .select(updateField)
-    .eq("user_id", userId)
-    .eq("saved_word_id", savedWordId)
-    .single();
-
-  if (fetchErr) throw fetchErr;
-
-  const { error } = await supabase
-    .from("word_progress")
-    .update({
-      easiness_factor: result.easinessFactor,
-      interval: result.interval,
-      repetitions: result.repetitions,
-      next_review_at: result.nextReviewAt.toISOString(),
-      last_reviewed_at: new Date().toISOString(),
-      [updateField]: (current?.[updateField] ?? 0) + 1,
-    })
-    .eq("user_id", userId)
-    .eq("saved_word_id", savedWordId);
+  // Use RPC for atomic increment to avoid read-then-write race condition
+  const { error } = await supabase.rpc("update_word_progress", {
+    p_user_id: userId,
+    p_saved_word_id: savedWordId,
+    p_easiness_factor: result.easinessFactor,
+    p_interval: result.interval,
+    p_repetitions: result.repetitions,
+    p_next_review_at: result.nextReviewAt.toISOString(),
+    p_correct: correct,
+  });
 
   if (error) throw error;
 }

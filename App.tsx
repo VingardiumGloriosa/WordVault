@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ThemeProvider, createTheme } from "@rneui/themed";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "./auth/AuthProvider";
+import { Analytics } from "@vercel/analytics/react";
+import OfflineBanner from "./components/OfflineBanner";
 import { colors } from "./theme";
 
 import SplashScreen from "./screens/SplashScreen";
@@ -67,11 +69,13 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider theme={rneuiTheme}>
         <AuthProvider>
+          <OfflineBanner />
           <NavigationContainer theme={navTheme}>
             <RootNavigator />
           </NavigationContainer>
         </AuthProvider>
       </ThemeProvider>
+      <Analytics />
     </GestureHandlerRootView>
   );
 }
