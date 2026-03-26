@@ -1,37 +1,51 @@
-const CURATED_WORDS: string[] = [
-  "ephemeral", "petrichor", "mellifluous", "sonder", "defenestration",
-  "serendipity", "luminous", "querulous", "ineffable", "sanguine",
-  "laconic", "halcyon", "ebullient", "languor", "penumbra",
-  "susurrus", "vellichor", "reverie", "dulcet", "ethereal",
-  "solitude", "eloquence", "vestige", "labyrinth", "enigma",
-  "clandestine", "bucolic", "effervescent", "diaphanous", "sonorous",
-  "quixotic", "insouciance", "limerence", "evanescent", "palimpsest",
-  "numinous", "hiraeth", "gossamer", "catharsis", "wistful",
-  "aplomb", "redolent", "chiaroscuro", "demure", "ennui",
-  "incandescent", "meridian", "lissome", "opulent", "plethora",
-  "quintessence", "raconteur", "sagacious", "talisman", "ubiquitous",
-  "verdant", "wanderlust", "zenith", "aesthetic", "beguile",
-  "cascade", "dalliance", "elegy", "fugacious", "iridescent",
-  "harbinger", "idyllic", "juxtapose", "kaleidoscope", "lithe",
-  "melancholy", "nebulous", "oblivion", "paradox", "resplendent",
-  "silhouette", "transient", "umbra", "vivacious", "whimsical",
-  "arcane", "benevolent", "cipher", "dissolution", "epiphany",
-  "felicity", "grandiloquent", "heuristic", "illustrious", "jejune",
-  "kinetic", "liminal", "mercurial", "nascent", "oscillate",
-  "panacea", "reticent", "scintillate", "tenebrous", "undulate",
-  "vicissitude", "wisteria", "ablaze", "brevity", "crescendo",
-  "dulcimer", "elixir", "flicker", "gambit", "harmonic",
-  "implore", "jubilant", "kismet", "languish", "mosaic",
-  "nocturne", "opalescent", "pristine", "requiem", "solace",
-  "tempest", "utopia", "vignette", "wraith", "xeric",
-  "yearning", "zephyr", "aurora", "bibliophile", "confluence",
-  "denouement", "equanimity", "flourish", "gossamer", "illusory",
-  "juxtaposition", "keen", "loquacious", "maelstrom", "nuance",
-  "ode", "phosphorescence", "quiescent", "rhapsody", "somnolent",
-  "taciturn", "vertiginous", "alchemy", "chrysalis", "dusk",
-];
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export function getWordOfTheDay(): string {
-  const dayIndex = Math.floor(Date.now() / 86400000);
-  return CURATED_WORDS[dayIndex % CURATED_WORDS.length];
+const RANDOM_WORD_API = "https://random-word-api.herokuapp.com/word";
+const DICTIONARY_API = process.env.EXPO_PUBLIC_DICTIONARY_API_URL;
+const STORAGE_KEY = "wotd";
+const MAX_RETRIES = 5;
+
+type CachedWotd = {
+  word: string;
+  date: string;
+};
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export async function getWordOfTheDay(): Promise<string> {
+  const today = todayKey();
+
+  // Check cache first
+  try {
+    const cached = await AsyncStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      const parsed: CachedWotd = JSON.parse(cached);
+      if (parsed.date === today && parsed.word) return parsed.word;
+    }
+  } catch {}
+
+  // Fetch a random word that exists in the dictionary
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      const randomRes = await fetch(RANDOM_WORD_API);
+      if (!randomRes.ok) continue;
+      const [word]: string[] = await randomRes.json();
+      if (!word || word.length < 3) continue;
+
+      // Validate it has a dictionary entry
+      const dictRes = await fetch(`${DICTIONARY_API}/${encodeURIComponent(word)}`);
+      if (!dictRes.ok) continue;
+
+      // Cache for the day
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ word, date: today }));
+      return word;
+    } catch {
+      continue;
+    }
+  }
+
+  // Fallback if API fails
+  return "serendipity";
 }
