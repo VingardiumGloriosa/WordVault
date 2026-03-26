@@ -1,7 +1,7 @@
 import { View, StyleSheet } from "react-native";
 import { Text, Button } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
-import { colors, ornament } from "../theme";
+import { colors, fonts, ornament } from "../theme";
 
 interface GuestPromptProps {
   icon: string;
@@ -14,11 +14,13 @@ export default function GuestPrompt({ icon, title, message }: GuestPromptProps) 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>{icon}</Text>
-      <Text style={styles.ornament}>{ornament}</Text>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
-      <Text style={styles.ornament}>{ornament}</Text>
+      <View style={styles.row}>
+        <Text style={styles.icon}>{icon}</Text>
+        <View style={styles.textBlock}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.message}>{message}</Text>
+        </View>
+      </View>
       <Button
         title="Sign In"
         onPress={() => navigation.navigate("Profile")}
@@ -32,50 +34,56 @@ export default function GuestPrompt({ icon, title, message }: GuestPromptProps) 
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    backgroundColor: colors.obsidian,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.charcoal,
+    padding: 20,
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  row: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
+    marginBottom: 14,
   },
   icon: {
-    fontSize: 40,
-    marginBottom: 12,
-    opacity: 0.5,
+    fontSize: 28,
+    marginRight: 14,
+    opacity: 0.6,
   },
-  ornament: {
-    color: colors.faded,
-    fontSize: 12,
-    letterSpacing: 6,
-    marginVertical: 10,
+  textBlock: {
+    flex: 1,
   },
   title: {
     color: colors.bone,
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "300",
-    letterSpacing: 2,
-    marginBottom: 8,
+    letterSpacing: 1,
+    marginBottom: 4,
+    fontFamily: fonts.display,
   },
   message: {
     color: colors.ash,
-    textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
     fontStyle: "italic",
-    fontSize: 14,
+    fontSize: 13,
+    fontFamily: fonts.body,
   },
   buttonContainer: {
-    marginTop: 8,
-    minWidth: 160,
+    minWidth: 120,
   },
   button: {
-    borderRadius: 12,
-    paddingVertical: 13,
+    borderRadius: 10,
+    paddingVertical: 11,
     backgroundColor: colors.wine,
   },
   buttonText: {
     color: colors.bone,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: 2,
     textTransform: "uppercase",
-    fontSize: 12,
+    fontSize: 11,
+    fontFamily: fonts.body,
   },
 });

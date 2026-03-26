@@ -4,6 +4,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Animated,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -16,8 +17,11 @@ import {
   saveLearningSession,
   SavedWordWithProgress,
 } from "../../lib/learningProgress";
-import { colors, ornament } from "../../theme";
+import { colors, fonts, ornament } from "../../theme";
 import ScreenContainer from "../../components/ScreenContainer";
+import { getSessionMessage } from "../../lib/sessionMessages";
+import { useKeyboardShortcut } from "../../lib/useKeyboardShortcut";
+import { pulseAnimation, shakeAnimation } from "../../lib/animations";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -94,22 +98,34 @@ export default function QuizScreen() {
     );
   }
 
-  const questions = useRef(buildQuestions(words)).current;
+  const questionsRef = useRef(buildQuestions(words));
+  const questions = questionsRef.current;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [missedWordIds] = useState(() => new Set<string>());
+  const optionAnims = useRef(questions.map(() => new Animated.Value(1))).current;
+  const shakeAnims = useRef(questions.map(() => new Animated.Value(0))).current;
 
   const handleSelect = useCallback(
     async (optionIndex: number) => {
-      if (selected !== null) return; // Already answered
+      if (selected !== null) return;
       setSelected(optionIndex);
 
       const q = questions[currentIndex];
       const correct = optionIndex === q.correctIndex;
       const quality = correct ? 5 : 1;
       if (correct) setCorrectCount((c) => c + 1);
+      if (!correct) missedWordIds.add(q.word.id);
+
+      // Animate feedback
+      if (correct) {
+        pulseAnimation(optionAnims[currentIndex]).start();
+      } else {
+        shakeAnimation(shakeAnims[currentIndex]).start();
+      }
 
       if (session && q.word.progress) {
         const result = reviewCard(
@@ -131,53 +147,96 @@ export default function QuizScreen() {
           // Non-blocking
         }
       }
-
-      // Auto-advance after delay
-      setTimeout(() => {
-        if (currentIndex + 1 >= questions.length) {
-          setDone(true);
-          const finalCorrect = correct
-            ? correctCount + 1
-            : correctCount;
-          if (session) {
-            saveLearningSession(
-              session.user.id,
-              "quiz",
-              questions.length,
-              finalCorrect,
-            ).catch(() => {});
-          }
-        } else {
-          setSelected(null);
-          setCurrentIndex((i) => i + 1);
-        }
-      }, 1200);
     },
-    [selected, currentIndex, questions, session, correctCount],
+    [selected, currentIndex, questions, session, missedWordIds],
   );
+
+  const handleNext = useCallback(() => {
+    if (currentIndex + 1 >= questions.length) {
+      setDone(true);
+      const correct = selected === questions[currentIndex].correctIndex;
+      const finalCorrect = correct ? correctCount + 1 : correctCount;
+      if (session) {
+        saveLearningSession(
+          session.user.id,
+          "quiz",
+          questions.length,
+          finalCorrect,
+        ).catch(() => {});
+      }
+    } else {
+      setSelected(null);
+      setCurrentIndex((i) => i + 1);
+    }
+  }, [currentIndex, questions, session, correctCount, selected]);
+
+  useKeyboardShortcut("1", useCallback(() => { if (selected === null && questions[currentIndex]?.options[0]) handleSelect(0); }, [selected, currentIndex, questions, handleSelect]));
+  useKeyboardShortcut("2", useCallback(() => { if (selected === null && questions[currentIndex]?.options[1]) handleSelect(1); }, [selected, currentIndex, questions, handleSelect]));
+  useKeyboardShortcut("3", useCallback(() => { if (selected === null && questions[currentIndex]?.options[2]) handleSelect(2); }, [selected, currentIndex, questions, handleSelect]));
+  useKeyboardShortcut("4", useCallback(() => { if (selected === null && questions[currentIndex]?.options[3]) handleSelect(3); }, [selected, currentIndex, questions, handleSelect]));
+  useKeyboardShortcut("Enter", useCallback(() => { if (selected !== null) handleNext(); }, [selected, handleNext]));
+  useKeyboardShortcut(" ", useCallback(() => { if (selected !== null) handleNext(); }, [selected, handleNext]));
+
+  const handlePlayAgain = useCallback(() => {
+    questionsRef.current = buildQuestions(words);
+    setCurrentIndex(0);
+    setSelected(null);
+    setCorrectCount(0);
+    setDone(false);
+    missedWordIds.clear();
+  }, [words, missedWordIds]);
+
+  const handleReviewMissed = useCallback(() => {
+    const missed = words.filter((w) => missedWordIds.has(w.id));
+    if (missed.length < 4) return;
+    questionsRef.current = buildQuestions(missed);
+    setCurrentIndex(0);
+    setSelected(null);
+    setCorrectCount(0);
+    setDone(false);
+    missedWordIds.clear();
+  }, [words, missedWordIds]);
 
   if (done) {
     const total = questions.length;
     const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+    const msg = getSessionMessage(pct);
+    const canReviewMissed = missedWordIds.size >= 4;
 
     return (
       <SafeAreaView style={styles.safeArea}>
         <ScreenContainer>
         <View style={styles.centered}>
-          <Text style={styles.summaryTitle}>Quiz Complete</Text>
+          <Text style={styles.summaryTitle}>{msg.title}</Text>
           <Text style={styles.screenOrnament}>{ornament}</Text>
           <Text style={styles.summaryValue}>
             {correctCount} / {total}
           </Text>
           <Text style={styles.summaryLabel}>{pct}% correct</Text>
-          <Button
-            title="Back to Learn"
-            type="outline"
-            onPress={() => navigation.goBack()}
-            buttonStyle={styles.backButton}
-            titleStyle={styles.backButtonTitle}
-            containerStyle={{ marginTop: 32 }}
-          />
+          <Text style={styles.summarySubtitle}>{msg.subtitle}</Text>
+          <View style={styles.completionButtons}>
+            <Button
+              title="Play Again"
+              onPress={handlePlayAgain}
+              buttonStyle={styles.playAgainButton}
+              titleStyle={styles.playAgainButtonTitle}
+            />
+            {canReviewMissed && (
+              <Button
+                title="Review Missed"
+                onPress={handleReviewMissed}
+                buttonStyle={styles.reviewMissedButton}
+                titleStyle={styles.playAgainButtonTitle}
+              />
+            )}
+            <Button
+              title="Back to Learn"
+              type="outline"
+              onPress={() => navigation.goBack()}
+              buttonStyle={styles.backButton}
+              titleStyle={styles.backButtonTitle}
+            />
+          </View>
         </View>
         </ScreenContainer>
       </SafeAreaView>
@@ -190,7 +249,7 @@ export default function QuizScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScreenContainer>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityLabel="Go back" accessibilityRole="button">
           <Text style={styles.backArrow}>{"\u2190"}</Text>
         </TouchableOpacity>
         <Text style={styles.progress}>
@@ -214,19 +273,39 @@ export default function QuizScreen() {
             }
           }
 
+          const isCorrectOpt = selected !== null && i === q.correctIndex;
+          const isWrongOpt = selected !== null && i === selected && i !== q.correctIndex;
+
           return (
-            <TouchableOpacity
+            <Animated.View
               key={i}
-              style={optStyle}
-              onPress={() => handleSelect(i)}
-              disabled={selected !== null}
-              activeOpacity={0.7}
+              style={{
+                transform: [
+                  { scale: isCorrectOpt ? optionAnims[currentIndex] : 1 },
+                  { translateX: isWrongOpt ? shakeAnims[currentIndex] : 0 },
+                ],
+              }}
             >
-              <Text style={styles.optionText}>{opt}</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={optStyle}
+                onPress={() => handleSelect(i)}
+                disabled={selected !== null}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.optionText}>{opt}</Text>
+              </TouchableOpacity>
+            </Animated.View>
           );
         })}
       </View>
+
+      {selected !== null && (
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {currentIndex + 1 >= questions.length ? "See Results" : "Next"}
+          </Text>
+        </TouchableOpacity>
+      )}
       </ScreenContainer>
     </SafeAreaView>
   );
@@ -248,10 +327,12 @@ const styles = StyleSheet.create({
   backArrow: {
     color: colors.bone,
     fontSize: 22,
+    fontFamily: fonts.body,
   },
   progress: {
     color: colors.ash,
     fontSize: 13,
+    fontFamily: fonts.body,
     letterSpacing: 2,
   },
   questionBlock: {
@@ -263,6 +344,7 @@ const styles = StyleSheet.create({
   questionLabel: {
     color: colors.ash,
     fontSize: 13,
+    fontFamily: fonts.body,
     fontStyle: "italic",
     letterSpacing: 1,
     marginBottom: 16,
@@ -270,6 +352,7 @@ const styles = StyleSheet.create({
   questionWord: {
     color: colors.bone,
     fontSize: 32,
+    fontFamily: fonts.display,
     fontWeight: "300",
     letterSpacing: 1,
   },
@@ -295,6 +378,7 @@ const styles = StyleSheet.create({
   optionText: {
     color: colors.parchment,
     fontSize: 14,
+    fontFamily: fonts.body,
     lineHeight: 20,
   },
   centered: {
@@ -306,6 +390,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     color: colors.bone,
     fontSize: 20,
+    fontFamily: fonts.display,
     fontWeight: "300",
     letterSpacing: 2,
     marginBottom: 8,
@@ -313,17 +398,20 @@ const styles = StyleSheet.create({
   screenOrnament: {
     color: colors.faded,
     fontSize: 12,
+    fontFamily: fonts.body,
     letterSpacing: 6,
     marginBottom: 24,
   },
   summaryValue: {
     color: colors.ember,
     fontSize: 36,
+    fontFamily: fonts.display,
     fontWeight: "300",
   },
   summaryLabel: {
     color: colors.ash,
     fontSize: 14,
+    fontFamily: fonts.body,
     fontStyle: "italic",
     marginTop: 4,
   },
@@ -335,6 +423,53 @@ const styles = StyleSheet.create({
   backButtonTitle: {
     color: colors.bone,
     fontSize: 13,
+    fontFamily: fonts.body,
     letterSpacing: 1,
+  },
+  nextButton: {
+    backgroundColor: colors.wine,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 24,
+    alignItems: "center",
+  },
+  nextButtonText: {
+    color: colors.bone,
+    fontSize: 14,
+    fontFamily: fonts.body,
+    fontWeight: "400",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  summarySubtitle: {
+    color: colors.ghost,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    fontStyle: "italic",
+    marginTop: 12,
+  },
+  completionButtons: {
+    marginTop: 28,
+    gap: 12,
+    width: "100%",
+    paddingHorizontal: 16,
+  },
+  playAgainButton: {
+    backgroundColor: colors.wine,
+    borderRadius: 10,
+    paddingHorizontal: 24,
+  },
+  playAgainButtonTitle: {
+    color: colors.bone,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    letterSpacing: 1,
+  },
+  reviewMissedButton: {
+    backgroundColor: colors.amberMuted,
+    borderRadius: 10,
+    paddingHorizontal: 24,
   },
 });

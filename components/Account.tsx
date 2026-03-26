@@ -6,8 +6,11 @@ import { Session } from "@supabase/supabase-js";
 import Avatar from "./Avatar";
 import ScreenContainer from "./ScreenContainer";
 import { useAuth } from "../auth/AuthProvider";
-import { colors, ornament } from "../theme";
+import { colors, fonts, ornament } from "../theme";
 import { validateUsername } from "../lib/authErrors";
+import { fetchSavedWords } from "../lib/savedWords";
+import { fetchLearningStats } from "../lib/learningProgress";
+import Skeleton from "./Skeleton";
 
 export default function Account({ session }: { session: Session }) {
   const { signOut } = useAuth();
@@ -15,9 +18,22 @@ export default function Account({ session }: { session: Session }) {
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [dashStats, setDashStats] = useState<{ total: number; streak: number; mastered: number } | null>(null);
 
   useEffect(() => {
-    if (session) getProfile();
+    if (session) {
+      getProfile();
+      Promise.all([
+        fetchSavedWords(session.user.id),
+        fetchLearningStats(session.user.id),
+      ]).then(([saved, stats]) => {
+        setDashStats({
+          total: saved.length,
+          streak: stats.streak,
+          mastered: stats.mastered,
+        });
+      }).catch(() => {});
+    }
   }, [session]);
 
   async function getProfile() {
@@ -94,6 +110,29 @@ export default function Account({ session }: { session: Session }) {
             }}
           />
         </View>
+
+        {dashStats ? (
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{dashStats.total}</Text>
+              <Text style={styles.statLabel}>Words</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{dashStats.mastered}</Text>
+              <Text style={styles.statLabel}>Mastered</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{dashStats.streak}</Text>
+              <Text style={styles.statLabel}>Streak</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}><Skeleton width={40} height={22} borderRadius={4} /><Skeleton width={50} height={10} borderRadius={4} style={{ marginTop: 6 }} /></View>
+            <View style={styles.statCard}><Skeleton width={40} height={22} borderRadius={4} /><Skeleton width={50} height={10} borderRadius={4} style={{ marginTop: 6 }} /></View>
+            <View style={styles.statCard}><Skeleton width={40} height={22} borderRadius={4} /><Skeleton width={50} height={10} borderRadius={4} style={{ marginTop: 6 }} /></View>
+          </View>
+        )}
 
         <View style={styles.card}>
           <View style={styles.field}>
@@ -181,6 +220,7 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     textTransform: "uppercase",
     marginTop: 12,
+    fontFamily: fonts.body,
   },
   screenOrnament: {
     color: colors.faded,
@@ -189,10 +229,39 @@ const styles = StyleSheet.create({
     letterSpacing: 6,
     marginTop: 6,
     marginBottom: 24,
+    fontFamily: fonts.body,
   },
   avatarWrap: {
     alignItems: "center",
     marginBottom: 28,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.obsidian,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.charcoal,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  statValue: {
+    color: colors.ember,
+    fontSize: 22,
+    fontWeight: "300",
+    fontFamily: fonts.display,
+  },
+  statLabel: {
+    color: colors.ash,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginTop: 4,
+    fontFamily: fonts.body,
   },
   card: {
     backgroundColor: colors.obsidian,
@@ -211,6 +280,7 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     marginBottom: 0,
     marginLeft: 10,
+    fontFamily: fonts.body,
   },
   inputContainer: {
     marginBottom: -4,
@@ -218,6 +288,7 @@ const styles = StyleSheet.create({
   inputText: {
     color: colors.bone,
     fontSize: 15,
+    fontFamily: fonts.body,
   },
   inputInner: {
     borderBottomColor: colors.charcoal,
@@ -237,10 +308,11 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: colors.bone,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: 2,
     textTransform: "uppercase",
     fontSize: 12,
+    fontFamily: fonts.body,
   },
   disabledButton: {
     backgroundColor: colors.charcoal,
@@ -257,9 +329,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     textTransform: "uppercase",
+    fontFamily: fonts.body,
   },
   errorText: {
     color: colors.bloodBright,
     fontSize: 11,
+    fontFamily: fonts.body,
   },
 });

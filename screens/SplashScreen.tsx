@@ -2,7 +2,7 @@ import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@rneui/themed";
-import { colors, ornament } from "../theme";
+import { colors, fonts, ornament } from "../theme";
 import ScreenContainer from "../components/ScreenContainer";
 
 export default function SplashScreen() {
@@ -34,6 +34,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 16,
     letterSpacing: 6,
+    fontFamily: fonts.body,
   },
   title: {
     color: colors.bone,
@@ -41,6 +42,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     fontWeight: "300",
     fontSize: 32,
+    fontFamily: fonts.display,
   },
   subtitle: {
     color: colors.ash,
@@ -48,12 +50,14 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     marginTop: 6,
     letterSpacing: 3,
+    fontFamily: fonts.body,
   },
   ornamentBottom: {
     color: colors.faded,
     fontSize: 16,
     marginTop: 16,
     letterSpacing: 6,
+    fontFamily: fonts.body,
   },
   spinner: {
     marginTop: 40,

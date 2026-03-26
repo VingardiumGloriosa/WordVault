@@ -19,8 +19,10 @@ import {
   saveLearningSession,
   SavedWordWithProgress,
 } from "../../lib/learningProgress";
-import { colors, ornament } from "../../theme";
+import { colors, fonts, ornament } from "../../theme";
 import ScreenContainer from "../../components/ScreenContainer";
+import { getSessionMessage } from "../../lib/sessionMessages";
+import { useKeyboardShortcut } from "../../lib/useKeyboardShortcut";
 
 const SCREEN_WIDTH = Math.min(Dimensions.get("window").width, 480);
 
@@ -88,6 +90,7 @@ export default function FlashcardsScreen() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [missedWordIds] = useState(() => new Set<string>());
 
   const flipAnim = useRef(new Animated.Value(0)).current;
 
@@ -106,6 +109,8 @@ export default function FlashcardsScreen() {
     setIsFlipped(false);
   }, [flipAnim]);
 
+  useKeyboardShortcut(" ", flipCard);
+
   const handleGrade = useCallback(
     async (quality: number) => {
       const word = sortedWords.current[currentIndex];
@@ -113,6 +118,7 @@ export default function FlashcardsScreen() {
 
       const correct = quality >= 3;
       if (correct) setCorrectCount((c) => c + 1);
+      if (!correct) missedWordIds.add(word.id);
 
       const result = reviewCard(
         {
@@ -165,28 +171,74 @@ export default function FlashcardsScreen() {
     outputRange: ["180deg", "360deg"],
   });
 
+  const handlePlayAgain = useCallback(() => {
+    const now = Date.now();
+    sortedWords.current = [...words].sort((a, b) => {
+      const aTime = a.progress ? new Date(a.progress.next_review_at).getTime() : 0;
+      const bTime = b.progress ? new Date(b.progress.next_review_at).getTime() : 0;
+      const aDue = aTime <= now ? 0 : 1;
+      const bDue = bTime <= now ? 0 : 1;
+      if (aDue !== bDue) return aDue - bDue;
+      return aTime - bTime;
+    });
+    resetFlip();
+    setCurrentIndex(0);
+    setCorrectCount(0);
+    setDone(false);
+    missedWordIds.clear();
+  }, [words, resetFlip, missedWordIds]);
+
+  const handleReviewMissed = useCallback(() => {
+    const missed = words.filter((w) => missedWordIds.has(w.id));
+    if (missed.length < 1) return;
+    sortedWords.current = missed;
+    resetFlip();
+    setCurrentIndex(0);
+    setCorrectCount(0);
+    setDone(false);
+    missedWordIds.clear();
+  }, [words, missedWordIds, resetFlip]);
+
   if (done) {
     const total = sortedWords.current.length;
     const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+    const msg = getSessionMessage(pct);
+    const canReviewMissed = missedWordIds.size >= 1;
 
     return (
       <SafeAreaView style={styles.safeArea}>
         <ScreenContainer>
         <View style={styles.centered}>
-          <Text style={styles.summaryTitle}>Session Complete</Text>
+          <Text style={styles.summaryTitle}>{msg.title}</Text>
           <Text style={styles.screenOrnament}>{ornament}</Text>
           <Text style={styles.summaryValue}>
             {correctCount} / {total}
           </Text>
           <Text style={styles.summaryLabel}>{pct}% recalled</Text>
-          <Button
-            title="Back to Learn"
-            type="outline"
-            onPress={() => navigation.goBack()}
-            buttonStyle={styles.backButton}
-            titleStyle={styles.backButtonTitle}
-            containerStyle={{ marginTop: 32 }}
-          />
+          <Text style={styles.summarySubtitle}>{msg.subtitle}</Text>
+          <View style={styles.completionButtons}>
+            <Button
+              title="Play Again"
+              onPress={handlePlayAgain}
+              buttonStyle={styles.playAgainButton}
+              titleStyle={styles.playAgainButtonTitle}
+            />
+            {canReviewMissed && (
+              <Button
+                title="Review Missed"
+                onPress={handleReviewMissed}
+                buttonStyle={styles.reviewMissedButton}
+                titleStyle={styles.playAgainButtonTitle}
+              />
+            )}
+            <Button
+              title="Back to Learn"
+              type="outline"
+              onPress={() => navigation.goBack()}
+              buttonStyle={styles.backButton}
+              titleStyle={styles.backButtonTitle}
+            />
+          </View>
         </View>
         </ScreenContainer>
       </SafeAreaView>
@@ -199,7 +251,7 @@ export default function FlashcardsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScreenContainer>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityLabel="Go back" accessibilityRole="button">
           <Text style={styles.backArrow}>{"\u2190"}</Text>
         </TouchableOpacity>
         <Text style={styles.progress}>
@@ -246,16 +298,22 @@ export default function FlashcardsScreen() {
 
       <View style={styles.gradeRow}>
         <TouchableOpacity
-          style={[styles.gradeButton, styles.gradeButtonWrong]}
+          style={[styles.gradeButton, styles.gradeButtonForgot]}
           onPress={() => handleGrade(1)}
         >
-          <Text style={styles.gradeButtonText}>Still Learning</Text>
+          <Text style={styles.gradeButtonText}>Forgot</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.gradeButton, styles.gradeButtonRight]}
-          onPress={() => handleGrade(4)}
+          style={[styles.gradeButton, styles.gradeButtonHard]}
+          onPress={() => handleGrade(3)}
         >
-          <Text style={styles.gradeButtonText}>Got It</Text>
+          <Text style={styles.gradeButtonText}>Hard</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.gradeButton, styles.gradeButtonEasy]}
+          onPress={() => handleGrade(5)}
+        >
+          <Text style={styles.gradeButtonText}>Easy</Text>
         </TouchableOpacity>
       </View>
       </ScreenContainer>
@@ -279,10 +337,12 @@ const styles = StyleSheet.create({
   backArrow: {
     color: colors.bone,
     fontSize: 22,
+    fontFamily: fonts.body,
   },
   progress: {
     color: colors.ash,
     fontSize: 13,
+    fontFamily: fonts.body,
     letterSpacing: 2,
   },
   cardContainer: {
@@ -316,6 +376,7 @@ const styles = StyleSheet.create({
   cardLabel: {
     color: colors.ghost,
     fontSize: 10,
+    fontFamily: fonts.body,
     letterSpacing: 3,
     textTransform: "uppercase",
     marginBottom: 16,
@@ -323,18 +384,21 @@ const styles = StyleSheet.create({
   cardWord: {
     color: colors.bone,
     fontSize: 32,
+    fontFamily: fonts.display,
     fontWeight: "300",
     letterSpacing: 1,
   },
   tapHint: {
     color: colors.faded,
     fontSize: 11,
+    fontFamily: fonts.body,
     fontStyle: "italic",
     marginTop: 20,
   },
   cardPartOfSpeech: {
     color: colors.wineLight,
     fontSize: 12,
+    fontFamily: fonts.body,
     fontStyle: "italic",
     letterSpacing: 1,
     marginBottom: 12,
@@ -342,6 +406,7 @@ const styles = StyleSheet.create({
   cardDefinition: {
     color: colors.parchment,
     fontSize: 16,
+    fontFamily: fonts.body,
     lineHeight: 24,
     textAlign: "center",
   },
@@ -357,16 +422,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
-  gradeButtonWrong: {
+  gradeButtonForgot: {
     backgroundColor: colors.burgundy,
   },
-  gradeButtonRight: {
+  gradeButtonHard: {
+    backgroundColor: colors.amberMuted,
+  },
+  gradeButtonEasy: {
     backgroundColor: colors.success,
   },
   gradeButtonText: {
     color: colors.bone,
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: fonts.body,
+    fontWeight: "400",
     letterSpacing: 1,
   },
   centered: {
@@ -378,6 +447,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     color: colors.bone,
     fontSize: 20,
+    fontFamily: fonts.display,
     fontWeight: "300",
     letterSpacing: 2,
     marginBottom: 8,
@@ -385,17 +455,20 @@ const styles = StyleSheet.create({
   screenOrnament: {
     color: colors.faded,
     fontSize: 12,
+    fontFamily: fonts.body,
     letterSpacing: 6,
     marginBottom: 24,
   },
   summaryValue: {
     color: colors.ember,
     fontSize: 36,
+    fontFamily: fonts.display,
     fontWeight: "300",
   },
   summaryLabel: {
     color: colors.ash,
     fontSize: 14,
+    fontFamily: fonts.body,
     fontStyle: "italic",
     marginTop: 4,
   },
@@ -407,6 +480,36 @@ const styles = StyleSheet.create({
   backButtonTitle: {
     color: colors.bone,
     fontSize: 13,
+    fontFamily: fonts.body,
     letterSpacing: 1,
+  },
+  summarySubtitle: {
+    color: colors.ghost,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    fontStyle: "italic",
+    marginTop: 12,
+  },
+  completionButtons: {
+    marginTop: 28,
+    gap: 12,
+    width: "100%",
+    paddingHorizontal: 16,
+  },
+  playAgainButton: {
+    backgroundColor: colors.wine,
+    borderRadius: 10,
+    paddingHorizontal: 24,
+  },
+  playAgainButtonTitle: {
+    color: colors.bone,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    letterSpacing: 1,
+  },
+  reviewMissedButton: {
+    backgroundColor: colors.amberMuted,
+    borderRadius: 10,
+    paddingHorizontal: 24,
   },
 });

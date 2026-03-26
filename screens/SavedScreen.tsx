@@ -13,11 +13,13 @@ import { Swipeable } from "react-native-gesture-handler";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../auth/AuthProvider";
 import { fetchSavedWords, deleteSavedWord, updateWordTag, deleteTag, saveWord } from "../lib/savedWords";
+import { getCachedEntry, DictionaryEntry } from "../store/dictionaryStore";
 import GuestPrompt from "../components/GuestPrompt";
 import TagDropdown from "../components/TagDropdown";
 import TagAutocompleteInput from "../components/TagAutocompleteInput";
-import { colors, ornament } from "../theme";
+import { colors, fonts, ornament } from "../theme";
 import ScreenContainer from "../components/ScreenContainer";
+import { SkeletonCard } from "../components/Skeleton";
 
 interface SavedWord {
   id: string;
@@ -41,6 +43,9 @@ export default function SavedScreen() {
   const [confirmDeleteTag, setConfirmDeleteTag] = useState<string | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedData, setExpandedData] = useState<DictionaryEntry | null>(null);
+  const [expandLoading, setExpandLoading] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -169,6 +174,36 @@ export default function SavedScreen() {
     }
   };
 
+  const handleCardTap = async (item: SavedWord) => {
+    if (expandedId === item.id) {
+      setExpandedId(null);
+      setExpandedData(null);
+      return;
+    }
+    setExpandedId(item.id);
+    setExpandedData(null);
+
+    const cached = getCachedEntry(item.word);
+    if (cached) {
+      setExpandedData(cached[0]);
+      return;
+    }
+
+    setExpandLoading(true);
+    try {
+      const API_URL = process.env.EXPO_PUBLIC_DICTIONARY_API_URL;
+      const res = await fetch(`${API_URL}/${encodeURIComponent(item.word.toLowerCase())}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExpandedData(data[0]);
+      }
+    } catch {
+      // Fallback: show stored definition only
+    } finally {
+      setExpandLoading(false);
+    }
+  };
+
   const renderRightActions = (item: SavedWord) => (
     <View style={styles.swipeActions}>
       <TouchableOpacity
@@ -177,12 +212,16 @@ export default function SavedScreen() {
           setEditingWord(item);
           setEditTagText(item.tag ?? "");
         }}
+        accessibilityLabel="Edit tag"
+        accessibilityRole="button"
       >
         <Text style={styles.swipeActionText}>Edit{"\n"}Tag</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.swipeRemove}
         onPress={() => handleDelete(item.id)}
+        accessibilityLabel="Remove word"
+        accessibilityRole="button"
       >
         <Text style={styles.swipeActionText}>Remove</Text>
       </TouchableOpacity>
@@ -221,6 +260,13 @@ export default function SavedScreen() {
           title="Your Collection Awaits"
           message={"Sign in to save words and\nbuild your personal lexicon."}
         />
+        <View style={styles.centered}>
+          <Text style={styles.emptyIcon}>{"\u{1F4DA}"}</Text>
+          <Text style={styles.emptyTitle}>Your collection is empty</Text>
+          <Text style={styles.emptySubtitle}>
+            Search for words and save them{"\n"}to build your personal lexicon.
+          </Text>
+        </View>
         </ScreenContainer>
       </SafeAreaView>
     );
@@ -231,8 +277,10 @@ export default function SavedScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScreenContainer>
         {renderHeader()}
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.ember} size="small" />
+        <View style={styles.skeletonContainer}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </View>
         </ScreenContainer>
       </SafeAreaView>
@@ -277,14 +325,56 @@ export default function SavedScreen() {
         }
         renderItem={({ item }) => (
           <Swipeable renderRightActions={() => renderRightActions(item)}>
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.wordText}>{item.word}</Text>
-                <Text style={styles.partOfSpeech}>{item.part_of_speech}</Text>
+            <TouchableOpacity activeOpacity={0.8} onPress={() => handleCardTap(item)}>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.wordText}>{item.word}</Text>
+                  <View style={styles.cardHeaderRight}>
+                    <Text style={styles.partOfSpeech}>{item.part_of_speech}</Text>
+                    <Text style={styles.chevron}>
+                      {expandedId === item.id ? "\u25B4" : "\u25BE"}
+                    </Text>
+                  </View>
+                </View>
+                {expandedId !== item.id && (
+                  <Text style={styles.definition} numberOfLines={2}>{item.definition}</Text>
+                )}
+                {item.tag && <Text style={styles.tag}>{item.tag}</Text>}
+
+                {expandedId === item.id && (
+                  <View style={styles.expandedSection}>
+                    {expandLoading && (
+                      <ActivityIndicator color={colors.ember} size="small" style={{ marginVertical: 12 }} />
+                    )}
+                    {expandedData ? (
+                      <>
+                        {expandedData.phonetic && (
+                          <Text style={styles.expandedPhonetic}>{expandedData.phonetic}</Text>
+                        )}
+                        {expandedData.meanings.map((meaning, i) => (
+                          <View key={i} style={styles.expandedMeaning}>
+                            <Text style={styles.expandedPos}>{meaning.partOfSpeech}</Text>
+                            {meaning.definitions.map((def, j) => (
+                              <View key={j} style={styles.expandedDef}>
+                                <Text style={styles.expandedDefNum}>{j + 1}.</Text>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={styles.expandedDefText}>{def.definition}</Text>
+                                  {def.example && (
+                                    <Text style={styles.expandedExample}>"{def.example}"</Text>
+                                  )}
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        ))}
+                      </>
+                    ) : !expandLoading ? (
+                      <Text style={styles.definition}>{item.definition}</Text>
+                    ) : null}
+                  </View>
+                )}
               </View>
-              <Text style={styles.definition}>{item.definition}</Text>
-              {item.tag && <Text style={styles.tag}>{item.tag}</Text>}
-            </View>
+            </TouchableOpacity>
           </Swipeable>
         )}
       />
@@ -386,21 +476,28 @@ const styles = StyleSheet.create({
   screenTitle: {
     color: colors.bone,
     fontSize: 13,
+    fontFamily: fonts.body,
     letterSpacing: 4,
     textTransform: "uppercase",
   },
   screenOrnament: {
     color: colors.faded,
     fontSize: 12,
+    fontFamily: fonts.body,
     letterSpacing: 6,
     marginTop: 6,
   },
   count: {
     color: colors.ash,
     fontSize: 12,
+    fontFamily: fonts.body,
     marginTop: 10,
     letterSpacing: 1,
     fontStyle: "italic",
+  },
+  skeletonContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   listContainer: {
     maxWidth: 480,
@@ -428,13 +525,25 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
+  cardHeaderRight: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+  },
+  chevron: {
+    color: colors.ghost,
+    fontSize: 12,
+    fontFamily: fonts.body,
+  },
   wordText: {
     color: colors.bone,
     fontSize: 20,
+    fontFamily: fonts.display,
     fontWeight: "300",
     letterSpacing: 1,
   },
   partOfSpeech: {
+    fontFamily: fonts.body,
     fontStyle: "italic",
     color: colors.wineLight,
     fontSize: 12,
@@ -442,17 +551,20 @@ const styles = StyleSheet.create({
   },
   definition: {
     color: colors.parchment,
+    fontFamily: fonts.body,
     lineHeight: 22,
     fontSize: 14,
   },
   tag: {
     color: colors.amberMuted,
+    fontFamily: fonts.body,
     fontStyle: "italic",
     fontSize: 12,
     marginTop: 6,
   },
   itemDivider: {
     color: colors.faded,
+    fontFamily: fonts.body,
     textAlign: "center",
     fontSize: 10,
     letterSpacing: 6,
@@ -472,12 +584,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     color: colors.ash,
     fontSize: 16,
+    fontFamily: fonts.display,
     fontWeight: "300",
     letterSpacing: 1,
     marginBottom: 8,
   },
   emptySubtitle: {
     color: colors.ghost,
+    fontFamily: fonts.body,
     textAlign: "center",
     lineHeight: 22,
     fontStyle: "italic",
@@ -485,6 +599,7 @@ const styles = StyleSheet.create({
   },
   error: {
     color: colors.bloodBright,
+    fontFamily: fonts.body,
   },
   // Swipe actions
   swipeActions: {
@@ -509,8 +624,9 @@ const styles = StyleSheet.create({
   },
   swipeActionText: {
     color: colors.bone,
+    fontFamily: fonts.body,
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: "400",
     textAlign: "center",
     letterSpacing: 1,
   },
@@ -531,6 +647,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: colors.bone,
+    fontFamily: fonts.display,
     fontSize: 16,
     fontWeight: "300",
     letterSpacing: 2,
@@ -539,6 +656,7 @@ const styles = StyleSheet.create({
   },
   modalWord: {
     color: colors.ash,
+    fontFamily: fonts.body,
     fontSize: 13,
     fontStyle: "italic",
     textAlign: "center",
@@ -550,6 +668,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.charcoal,
     color: colors.bone,
+    fontFamily: fonts.body,
     fontSize: 14,
     padding: 12,
     marginBottom: 16,
@@ -569,6 +688,7 @@ const styles = StyleSheet.create({
   },
   modalCancelText: {
     color: colors.ash,
+    fontFamily: fonts.body,
     fontSize: 13,
     letterSpacing: 1,
   },
@@ -580,8 +700,9 @@ const styles = StyleSheet.create({
   },
   modalSaveText: {
     color: colors.bone,
+    fontFamily: fonts.body,
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "400",
     letterSpacing: 1,
   },
   modalDelete: {
@@ -607,13 +728,15 @@ const styles = StyleSheet.create({
   },
   undoText: {
     color: colors.parchment,
+    fontFamily: fonts.body,
     fontSize: 13,
     flex: 1,
   },
   undoAction: {
     color: colors.ember,
+    fontFamily: fonts.body,
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: 2,
     marginLeft: 16,
   },
@@ -631,7 +754,65 @@ const styles = StyleSheet.create({
   },
   toastText: {
     color: colors.bloodBright,
+    fontFamily: fonts.body,
     fontSize: 13,
     textAlign: "center",
+  },
+  expandedSection: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.charcoal,
+    paddingTop: 12,
+  },
+  expandedPhonetic: {
+    color: colors.ember,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontStyle: "italic",
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  expandedMeaning: {
+    marginBottom: 8,
+  },
+  expandedPos: {
+    color: colors.wineLight,
+    fontFamily: fonts.body,
+    fontSize: 11,
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    marginBottom: 8,
+    fontWeight: "700",
+  },
+  expandedDef: {
+    flexDirection: "row",
+    marginBottom: 10,
+    paddingLeft: 4,
+  },
+  expandedDefNum: {
+    color: colors.amberMuted,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: "700",
+    marginRight: 8,
+    marginTop: 1,
+    minWidth: 16,
+  },
+  expandedDefText: {
+    color: colors.parchment,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  expandedExample: {
+    color: colors.ash,
+    fontFamily: fonts.body,
+    fontStyle: "italic",
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 4,
+    paddingLeft: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: colors.charcoal,
   },
 });

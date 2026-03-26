@@ -23,16 +23,22 @@ type DictionaryState = {
   result: DictionaryEntry[] | null;
   loading: boolean;
   error: string | null;
+  recentSearches: string[];
 
   search: (word: string) => Promise<void>;
   saveCurrentWord: (entry: DictionaryEntry, userId: string, tag?: string) => Promise<void>;
   clearResult: () => void;
 };
 
+export function getCachedEntry(word: string): DictionaryEntry[] | undefined {
+  return searchCache.get(word.trim().toLowerCase());
+}
+
 export const useDictionaryStore = create<DictionaryState>((set) => ({
   result: null,
   loading: false,
   error: null,
+  recentSearches: [],
 
   search: async (word) => {
     if (!word.trim()) return;
@@ -40,7 +46,12 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
     const key = word.trim().toLowerCase();
     const cached = searchCache.get(key);
     if (cached) {
-      set({ result: cached, loading: false, error: null });
+      set((state) => ({
+        result: cached,
+        loading: false,
+        error: null,
+        recentSearches: [key, ...state.recentSearches.filter((w) => w !== key)].slice(0, 10),
+      }));
       return;
     }
 
@@ -65,7 +76,11 @@ export const useDictionaryStore = create<DictionaryState>((set) => ({
       }
       searchCache.set(key, data);
 
-      set({ result: data, loading: false });
+      set((state) => ({
+        result: data,
+        loading: false,
+        recentSearches: [key, ...state.recentSearches.filter((w) => w !== key)].slice(0, 10),
+      }));
     } catch (err) {
       const message =
         err instanceof TypeError

@@ -5,6 +5,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Dimensions,
+  Animated,
 } from "react-native";
 import { Text, Button } from "@rneui/themed";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -17,12 +18,16 @@ import {
   saveLearningSession,
   SavedWordWithProgress,
 } from "../../lib/learningProgress";
-import { colors, ornament } from "../../theme";
+import { colors, fonts, ornament } from "../../theme";
 import ScreenContainer from "../../components/ScreenContainer";
+import { getSessionMessage } from "../../lib/sessionMessages";
+import { popAnimation } from "../../lib/animations";
 
 const SCREEN_WIDTH = Math.min(Dimensions.get("window").width, 480);
 const TILE_GAP = 8;
-const TILE_WIDTH = (SCREEN_WIDTH - 40 - TILE_GAP * 2) / 3;
+const PAIR_COUNT = SCREEN_WIDTH < 380 ? 4 : 6;
+const COLUMNS = PAIR_COUNT <= 4 ? 2 : 3;
+const TILE_WIDTH = (SCREEN_WIDTH - 40 - TILE_GAP * (COLUMNS - 1)) / COLUMNS;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -41,7 +46,7 @@ type Tile = {
 };
 
 function buildTiles(words: SavedWordWithProgress[]): Tile[] {
-  const picked = shuffle(words).slice(0, 6);
+  const picked = shuffle(words).slice(0, PAIR_COUNT);
   const tiles: Tile[] = [];
 
   for (const w of picked) {
@@ -49,8 +54,8 @@ function buildTiles(words: SavedWordWithProgress[]): Tile[] {
     tiles.push({
       id: `d-${w.id}`,
       pairId: w.id,
-      text: w.definition.length > 60
-        ? w.definition.slice(0, 57) + "..."
+      text: w.definition.length > 80
+        ? w.definition.slice(0, 77) + "..."
         : w.definition,
       type: "definition",
     });
@@ -96,16 +101,23 @@ export default function MatchGameScreen() {
     );
   }
 
-  const tiles = useRef(buildTiles(words)).current;
+  const tilesRef = useRef(buildTiles(words));
+  const tiles = tilesRef.current;
   const wordMap = useRef(
     new Map(words.map((w) => [w.id, w])),
   ).current;
+
+  const tileScaleAnims = useRef(new Map<string, Animated.Value>()).current;
+  const getTileScale = (id: string) => {
+    if (!tileScaleAnims.has(id)) tileScaleAnims.set(id, new Animated.Value(1));
+    return tileScaleAnims.get(id)!;
+  };
 
   const [selected, setSelected] = useState<string | null>(null);
   const [matched, setMatched] = useState<Set<string>>(new Set());
   const [wrong, setWrong] = useState<Set<string>>(new Set());
   const [attempts, setAttempts] = useState<Map<string, number>>(new Map());
-  const [startTime] = useState(Date.now());
+  const startTimeRef = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
   const [done, setDone] = useState(false);
 
@@ -113,7 +125,7 @@ export default function MatchGameScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   if (!timerRef.current && !done) {
     timerRef.current = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+      setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
     }, 1000);
   }
 
@@ -123,7 +135,7 @@ export default function MatchGameScreen() {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      const duration = Math.floor((Date.now() - startTime) / 1000);
+      const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
       setElapsed(duration);
       setDone(true);
 
@@ -174,7 +186,7 @@ export default function MatchGameScreen() {
         // Non-blocking
       }
     },
-    [session, tiles, wordMap, startTime],
+    [session, tiles, wordMap],
   );
 
   const handleTileTap = useCallback(
@@ -204,6 +216,10 @@ export default function MatchGameScreen() {
         newMatched.add(tileId);
         setMatched(newMatched);
         setSelected(null);
+
+        // Pop animation on matched tiles
+        popAnimation(getTileScale(selected)).start();
+        popAnimation(getTileScale(tileId)).start();
 
         // Track attempts for this pair
         const currentAttempts = new Map(attempts);
@@ -245,23 +261,55 @@ export default function MatchGameScreen() {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  const handlePlayAgain = useCallback(() => {
+    tilesRef.current = buildTiles(words);
+    setSelected(null);
+    setMatched(new Set());
+    setWrong(new Set());
+    setAttempts(new Map());
+    setElapsed(0);
+    setDone(false);
+    startTimeRef.current = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+    }, 1000);
+  }, [words]);
+
   if (done) {
+    const pairIds = new Set(tiles.map((t) => t.pairId));
+    let perfectMatches = 0;
+    for (const pairId of pairIds) {
+      if ((attempts.get(pairId) ?? 1) === 1) perfectMatches++;
+    }
+    const pct = pairIds.size > 0 ? Math.round((perfectMatches / pairIds.size) * 100) : 0;
+    const msg = getSessionMessage(pct);
+
     return (
       <SafeAreaView style={styles.safeArea}>
         <ScreenContainer>
         <View style={styles.centered}>
-          <Text style={styles.summaryTitle}>Match Complete</Text>
+          <Text style={styles.summaryTitle}>{msg.title}</Text>
           <Text style={styles.screenOrnament}>{ornament}</Text>
           <Text style={styles.summaryValue}>{formatTime(elapsed)}</Text>
-          <Text style={styles.summaryLabel}>time elapsed</Text>
-          <Button
-            title="Back to Learn"
-            type="outline"
-            onPress={() => navigation.goBack()}
-            buttonStyle={styles.backButton}
-            titleStyle={styles.backButtonTitle}
-            containerStyle={{ marginTop: 32 }}
-          />
+          <Text style={styles.summaryLabel}>
+            {perfectMatches}/{pairIds.size} first-try matches
+          </Text>
+          <Text style={styles.summarySubtitle}>{msg.subtitle}</Text>
+          <View style={styles.completionButtons}>
+            <Button
+              title="Play Again"
+              onPress={handlePlayAgain}
+              buttonStyle={styles.playAgainButton}
+              titleStyle={styles.playAgainButtonTitle}
+            />
+            <Button
+              title="Back to Learn"
+              type="outline"
+              onPress={() => navigation.goBack()}
+              buttonStyle={styles.backButton}
+              titleStyle={styles.backButtonTitle}
+            />
+          </View>
         </View>
         </ScreenContainer>
       </SafeAreaView>
@@ -272,7 +320,7 @@ export default function MatchGameScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScreenContainer>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityLabel="Go back" accessibilityRole="button">
           <Text style={styles.backArrow}>{"\u2190"}</Text>
         </TouchableOpacity>
         <Text style={styles.timer}>{formatTime(elapsed)}</Text>
@@ -286,30 +334,31 @@ export default function MatchGameScreen() {
             const isWrong = wrong.has(tile.id);
 
             return (
-              <TouchableOpacity
-                key={tile.id}
-                style={[
-                  styles.tile,
-                  isSelected && styles.tileSelected,
-                  isMatched && styles.tileMatched,
-                  isWrong && styles.tileWrong,
-                ]}
-                onPress={() => handleTileTap(tile.id)}
-                disabled={isMatched}
-                activeOpacity={0.7}
-              >
-                <Text
+              <Animated.View key={tile.id} style={{ transform: [{ scale: getTileScale(tile.id) }] }}>
+                <TouchableOpacity
                   style={[
-                    tile.type === "word"
-                      ? styles.tileWordText
-                      : styles.tileDefText,
-                    isMatched && styles.tileTextMatched,
+                    styles.tile,
+                    isSelected && styles.tileSelected,
+                    isMatched && styles.tileMatched,
+                    isWrong && styles.tileWrong,
                   ]}
-                  numberOfLines={4}
+                  onPress={() => handleTileTap(tile.id)}
+                  disabled={isMatched}
+                  activeOpacity={0.7}
                 >
-                  {tile.text}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      tile.type === "word"
+                        ? styles.tileWordText
+                        : styles.tileDefText,
+                      isMatched && styles.tileTextMatched,
+                    ]}
+                    numberOfLines={4}
+                  >
+                    {tile.text}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             );
           })}
         </View>
@@ -335,12 +384,14 @@ const styles = StyleSheet.create({
   backArrow: {
     color: colors.bone,
     fontSize: 22,
+    fontFamily: fonts.body,
   },
   timer: {
     color: colors.ember,
     fontSize: 16,
-    fontWeight: "300",
+    fontWeight: "400",
     letterSpacing: 2,
+    fontFamily: fonts.body,
   },
   gridContainer: {
     flex: 1,
@@ -355,7 +406,7 @@ const styles = StyleSheet.create({
   },
   tile: {
     width: TILE_WIDTH,
-    height: TILE_WIDTH * 0.9,
+    height: TILE_WIDTH * 1.0,
     backgroundColor: colors.obsidian,
     borderRadius: 10,
     borderWidth: 1,
@@ -379,14 +430,16 @@ const styles = StyleSheet.create({
   tileWordText: {
     color: colors.bone,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "400",
     textAlign: "center",
+    fontFamily: fonts.body,
   },
   tileDefText: {
     color: colors.parchment,
-    fontSize: 10,
+    fontSize: 13,
     textAlign: "center",
-    lineHeight: 14,
+    lineHeight: 18,
+    fontFamily: fonts.body,
   },
   tileTextMatched: {
     opacity: 0.5,
@@ -403,23 +456,27 @@ const styles = StyleSheet.create({
     fontWeight: "300",
     letterSpacing: 2,
     marginBottom: 8,
+    fontFamily: fonts.display,
   },
   screenOrnament: {
     color: colors.faded,
     fontSize: 12,
     letterSpacing: 6,
     marginBottom: 24,
+    fontFamily: fonts.body,
   },
   summaryValue: {
     color: colors.ember,
     fontSize: 36,
     fontWeight: "300",
+    fontFamily: fonts.display,
   },
   summaryLabel: {
     color: colors.ash,
     fontSize: 14,
     fontStyle: "italic",
     marginTop: 4,
+    fontFamily: fonts.body,
   },
   backButton: {
     borderColor: colors.charcoal,
@@ -430,5 +487,30 @@ const styles = StyleSheet.create({
     color: colors.bone,
     fontSize: 13,
     letterSpacing: 1,
+    fontFamily: fonts.body,
+  },
+  summarySubtitle: {
+    color: colors.ghost,
+    fontSize: 13,
+    fontStyle: "italic",
+    marginTop: 12,
+    fontFamily: fonts.body,
+  },
+  completionButtons: {
+    marginTop: 28,
+    gap: 12,
+    width: "100%",
+    paddingHorizontal: 16,
+  },
+  playAgainButton: {
+    backgroundColor: colors.wine,
+    borderRadius: 10,
+    paddingHorizontal: 24,
+  },
+  playAgainButtonTitle: {
+    color: colors.bone,
+    fontSize: 13,
+    letterSpacing: 1,
+    fontFamily: fonts.body,
   },
 });

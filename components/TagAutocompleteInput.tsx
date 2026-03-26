@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   suggestion: {
-    paddingVertical: 10,
+    paddingVertical: 14,
     paddingHorizontal: 14,
   },
   suggestionText: {

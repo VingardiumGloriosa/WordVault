@@ -5,7 +5,7 @@ import SearchScreen from "../screens/SearchScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SavedScreen from "../screens/SavedScreen";
 import LearnStack from "./LearnStack";
-import { colors } from "../theme";
+import { colors, fonts } from "../theme";
 
 const Tab = createBottomTabNavigator();
 
@@ -18,15 +18,19 @@ export default function AppTabs() {
           backgroundColor: colors.obsidian,
           borderTopColor: colors.charcoal,
           borderTopWidth: 1,
-          paddingBottom: (Platform.OS === "web" ? 28 : 8),
-          paddingTop: 6,
+          height: 72,
         },
         tabBarActiveTintColor: colors.ember,
         tabBarInactiveTintColor: colors.ghost,
+        tabBarLabelPosition: "below-icon",
+        tabBarItemStyle: {
+          paddingVertical: 6,
+        },
         tabBarLabelStyle: {
           fontSize: 10,
           letterSpacing: 2,
           textTransform: "uppercase",
+          fontFamily: fonts.body,
         },
       }}
     >
@@ -40,7 +44,7 @@ export default function AppTabs() {
         }}
       />
       <Tab.Screen
-        name="Saved"
+        name="Collection"
         component={SavedScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (

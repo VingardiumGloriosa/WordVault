@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { colors } from "../../theme";
+import { colors, fonts } from "../../theme";
 
 export const authStyles = StyleSheet.create({
   container: {
@@ -17,6 +17,7 @@ export const authStyles = StyleSheet.create({
     letterSpacing: 6,
     textAlign: "center",
     marginVertical: 8,
+    fontFamily: fonts.body,
   },
   brand: {
     color: colors.bone,
@@ -24,6 +25,7 @@ export const authStyles = StyleSheet.create({
     textTransform: "uppercase",
     fontWeight: "300",
     fontSize: 30,
+    fontFamily: fonts.display,
   },
   tagline: {
     color: colors.ash,
@@ -31,6 +33,7 @@ export const authStyles = StyleSheet.create({
     fontStyle: "italic",
     marginTop: 4,
     letterSpacing: 2,
+    fontFamily: fonts.body,
   },
   modeLabel: {
     color: colors.parchment,
@@ -39,6 +42,7 @@ export const authStyles = StyleSheet.create({
     letterSpacing: 3,
     textTransform: "uppercase",
     marginBottom: 20,
+    fontFamily: fonts.body,
   },
   formCard: {
     backgroundColor: colors.obsidian + "cc",
@@ -58,10 +62,12 @@ export const authStyles = StyleSheet.create({
   inputText: {
     color: colors.bone,
     fontSize: 15,
+    fontFamily: fonts.body,
   },
   errorText: {
     color: colors.bloodBright,
     fontSize: 11,
+    fontFamily: fonts.body,
   },
   buttonContainer: {
     marginTop: 12,
@@ -73,10 +79,11 @@ export const authStyles = StyleSheet.create({
   },
   primaryButtonText: {
     color: colors.bone,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: 2,
     textTransform: "uppercase",
     fontSize: 13,
+    fontFamily: fonts.body,
   },
   disabledButton: {
     backgroundColor: colors.charcoal,
@@ -96,6 +103,7 @@ export const authStyles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: "uppercase",
     fontSize: 12,
+    fontFamily: fonts.body,
   },
   toggleContainer: {
     marginTop: 20,
@@ -103,17 +111,20 @@ export const authStyles = StyleSheet.create({
   toggleText: {
     color: colors.ash,
     fontSize: 13,
+    fontFamily: fonts.body,
   },
   forgotText: {
     color: colors.ash,
     fontSize: 12,
     fontStyle: "italic",
+    fontFamily: fonts.body,
   },
   confirmTitle: {
     color: colors.bone,
     fontWeight: "300",
     letterSpacing: 2,
     textAlign: "center",
+    fontFamily: fonts.display,
   },
   confirmBody: {
     color: colors.parchment,
@@ -121,9 +132,11 @@ export const authStyles = StyleSheet.create({
     lineHeight: 24,
     marginVertical: 16,
     fontSize: 15,
+    fontFamily: fonts.body,
   },
   emailHighlight: {
     color: colors.ember,
     fontStyle: "italic",
+    fontFamily: fonts.body,
   },
 });

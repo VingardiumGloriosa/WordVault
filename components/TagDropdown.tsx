@@ -80,6 +80,8 @@ export default function TagDropdown({ tags, selectedTag, onSelectTag, onDeleteTa
                           onDeleteTag(item);
                         }}
                         activeOpacity={0.7}
+                        accessibilityLabel={`Delete tag ${item}`}
+                        accessibilityRole="button"
                       >
                         <Text style={styles.deleteBtnText}>{"\u00D7"}</Text>
                       </TouchableOpacity>
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   option: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
     borderRadius: 8,
     borderLeftWidth: 3,
@@ -164,8 +166,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   deleteBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    minWidth: 44,
+    minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
   },

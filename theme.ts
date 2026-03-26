@@ -14,11 +14,12 @@ export const colors = {
   emberGlow: "#d4924f",
   amber: "#e8b04a",
   amberMuted: "#a07832",
+  amberBg: "#2a2215",
 
   // Text
   bone: "#e8ddd0",
   parchment: "#c9b99a",
-  ash: "#8a8494",
+  ash: "#a09aac",
   ghost: "#5c566a",
   faded: "#3d3848",
 
@@ -31,6 +32,11 @@ export const colors = {
   successBg: "#1a2a15",
   errorBg: "#2a1515",
   overlay: "rgba(0,0,0,0.6)",
+};
+
+export const fonts = {
+  display: '"Cormorant Unicase", "Georgia", serif',
+  body: '"Libre Caslon Text", "Georgia", serif',
 };
 
 export const ornament = "\u2022 \u2726 \u2022";

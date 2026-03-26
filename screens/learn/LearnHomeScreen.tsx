@@ -12,7 +12,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useLearnStore } from "../../store/learnStore";
 import GuestPrompt from "../../components/GuestPrompt";
 import TagDropdown from "../../components/TagDropdown";
-import { colors, ornament } from "../../theme";
+import { colors, fonts, ornament } from "../../theme";
 import { LearnStackParamList } from "../../navigation/LearnStack";
 import ScreenContainer from "../../components/ScreenContainer";
 
@@ -93,6 +93,24 @@ export default function LearnHomeScreen() {
           title="Learning Hub"
           message={"Sign in to access flashcards,\nquizzes, and word matching."}
         />
+        <View style={styles.content}>
+          <View style={styles.modesContainer}>
+            {modes.map((mode) => (
+              <View
+                key={mode.key}
+                style={[styles.modeCard, styles.modeDisabled]}
+              >
+                <Text style={styles.modeIcon}>{mode.icon}</Text>
+                <View style={styles.modeTextBlock}>
+                  <Text style={[styles.modeTitle, styles.modeTitleDisabled]}>
+                    {mode.title}
+                  </Text>
+                  <Text style={styles.modeSubtitle}>{mode.subtitle}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
         </ScreenContainer>
       </SafeAreaView>
     );
@@ -192,12 +210,14 @@ const styles = StyleSheet.create({
   screenTitle: {
     color: colors.bone,
     fontSize: 13,
+    fontFamily: fonts.body,
     letterSpacing: 4,
     textTransform: "uppercase",
   },
   screenOrnament: {
     color: colors.faded,
     fontSize: 12,
+    fontFamily: fonts.body,
     letterSpacing: 6,
     marginTop: 6,
   },
@@ -208,6 +228,7 @@ const styles = StyleSheet.create({
   tagLabel: {
     color: colors.amberMuted,
     fontSize: 11,
+    fontFamily: fonts.body,
     fontStyle: "italic",
     marginTop: 6,
     letterSpacing: 1,
@@ -235,11 +256,13 @@ const styles = StyleSheet.create({
   statValue: {
     color: colors.ember,
     fontSize: 24,
+    fontFamily: fonts.display,
     fontWeight: "300",
   },
   statLabel: {
     color: colors.ash,
     fontSize: 10,
+    fontFamily: fonts.body,
     letterSpacing: 2,
     textTransform: "uppercase",
     marginTop: 4,
@@ -269,7 +292,8 @@ const styles = StyleSheet.create({
   modeTitle: {
     color: colors.bone,
     fontSize: 16,
-    fontWeight: "300",
+    fontFamily: fonts.body,
+    fontWeight: "400",
     letterSpacing: 1,
   },
   modeTitleDisabled: {
@@ -278,6 +302,7 @@ const styles = StyleSheet.create({
   modeSubtitle: {
     color: colors.ash,
     fontSize: 12,
+    fontFamily: fonts.body,
     marginTop: 3,
     fontStyle: "italic",
   },
@@ -288,9 +313,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.bloodBright,
+    fontFamily: fonts.body,
   },
   loadingText: {
     color: colors.ash,
+    fontFamily: fonts.body,
     fontStyle: "italic",
   },
 });
