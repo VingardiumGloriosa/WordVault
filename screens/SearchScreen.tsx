@@ -32,7 +32,11 @@ export default function SearchScreen() {
   const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = useRef<any>(null);
   const saveButtonScale = useRef(new Animated.Value(1)).current;
-  const wordOfTheDay = getWordOfTheDay();
+  const [wordOfTheDay, setWordOfTheDay] = useState("");
+
+  useEffect(() => {
+    getWordOfTheDay().then(setWordOfTheDay);
+  }, []);
 
   const focusSearch = useCallback(() => {
     searchInputRef.current?.focus();
