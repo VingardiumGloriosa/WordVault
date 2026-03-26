@@ -32,11 +32,7 @@ export default function SearchScreen() {
   const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = useRef<any>(null);
   const saveButtonScale = useRef(new Animated.Value(1)).current;
-  const [wordOfTheDay, setWordOfTheDay] = useState<string | null>(null);
-
-  useEffect(() => {
-    getWordOfTheDay().then(setWordOfTheDay);
-  }, []);
+  const wordOfTheDay = getWordOfTheDay();
 
   const focusSearch = useCallback(() => {
     searchInputRef.current?.focus();
@@ -265,19 +261,13 @@ export default function SearchScreen() {
             <View style={styles.wotdCard}>
               <Text style={styles.wotdLabel}>WORD OF THE DAY</Text>
               <Text style={styles.wotdOrnament}>{ornament}</Text>
-              {wordOfTheDay ? (
-                <>
-                  <Text style={styles.wotdWord}>{wordOfTheDay}</Text>
-                  <TouchableOpacity
-                    onPress={() => { setSearchText(wordOfTheDay); search(wordOfTheDay); }}
-                    style={styles.wotdAction}
-                  >
-                    <Text style={styles.wotdActionText}>Look it up</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <SkeletonLine width="50%" height={28} style={{ marginBottom: 16 }} />
-              )}
+              <Text style={styles.wotdWord}>{wordOfTheDay}</Text>
+              <TouchableOpacity
+                onPress={() => { setSearchText(wordOfTheDay); search(wordOfTheDay); }}
+                style={styles.wotdAction}
+              >
+                <Text style={styles.wotdActionText}>Look it up</Text>
+              </TouchableOpacity>
             </View>
 
             {recentSearches.length > 0 && (
