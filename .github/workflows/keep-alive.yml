@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write              # keepalive needs this to push its marker commit
+  contents: write              # needed so the keepalive step can push
 
 jobs:
   ping:
@@ -25,11 +25,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
-      - name: Keep workflow from auto-disabling
+      - name: Keep workflow alive (commit only if repo idle ≥ 45 days)
         if: always()           # run even if the ping failed, so the cron survives
-        uses: gautamkrishnar/keepalive-workflow@v2
-        with:
-          use_api: false       # commits a tiny marker when the repo nears 60 days idle
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          LAST=$(git log -1 --format=%ct)
+          DAYS=$(( ( $(date +%s) - LAST ) / 86400 ))
+          echo "Days since last commit: $DAYS"
+          if [ "$DAYS" -ge 45 ]; then
+            git commit --allow-empty -m "chore: keepalive [skip ci]"
+            git push
+          fi
 
       - name: Notify on failure
         if: failure()
